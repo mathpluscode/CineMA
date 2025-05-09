@@ -7,7 +7,7 @@ kaggle==1.7.4.5
 matplotlib==3.10.1
 monai==1.4.0
 nbmake==1.5.5
-numpy==1.26.4
+numpy==2.0.2
 pandas==2.2.3
 plotly==6.0.1
 pre-commit==4.2.0
