@@ -1,0 +1,226 @@
+# package
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cinema"
+authors = [
+    {name = "Yunguan Fu", email = "yunguan.fu.18@ucl.ac.uk"},
+]
+description = "CineMA: A Foundation Model for Cine Cardiac MRI."
+requires-python = ">=3.11"
+license = {text = "MIT"}
+version = "1.0.0"
+
+[project.scripts]
+# ukb
+ukb_split_bulk="cinema.data.ukb.split_bulk:main"
+ukb_check_download="cinema.data.ukb.check_download:main"
+ukb_dicom_to_nifti="cinema.data.ukb.dicom_to_nifti:main"
+ukb_process_image_metadata="cinema.data.ukb.process_image_metadata:main"
+ukb_process_text_metadata="cinema.data.ukb.process_text_metadata:main"
+
+ukb_mae_pretrain="cinema.mae.pretrain:main"
+ukb_mae_eval="cinema.mae.eval:main"
+
+# any evaluation
+cinema_eval="cinema.eval:main"
+
+# acdc
+acdc_preprocess="cinema.data.acdc.preprocess:main"
+acdc_seg_train="cinema.segmentation.acdc.train:main"
+acdc_seg_eval="cinema.segmentation.acdc.eval:main"
+acdc_clf_train="cinema.classification.acdc.train:main"
+acdc_clf_eval="cinema.classification.acdc.eval:main"
+acdc_reg_train="cinema.regression.acdc.train:main"
+acdc_reg_eval="cinema.regression.acdc.eval:main"
+
+# M&Ms
+mnms_preprocess="cinema.data.mnms.preprocess:main"
+mnms_seg_train="cinema.segmentation.mnms.train:main"
+mnms_seg_eval="cinema.segmentation.mnms.eval:main"
+mnms_clf_train="cinema.classification.mnms.train:main"
+mnms_clf_eval="cinema.classification.mnms.eval:main"
+mnms_reg_train="cinema.regression.mnms.train:main"
+mnms_reg_eval="cinema.regression.mnms.eval:main"
+
+# M&Ms2
+mnms2_preprocess="cinema.data.mnms2.preprocess:main"
+mnms2_seg_train="cinema.segmentation.mnms2.train:main"
+mnms2_seg_eval="cinema.segmentation.mnms2.eval:main"
+mnms2_clf_train="cinema.classification.mnms2.train:main"
+mnms2_clf_eval="cinema.classification.mnms2.eval:main"
+mnms2_reg_train="cinema.regression.mnms2.train:main"
+mnms2_reg_eval="cinema.regression.mnms2.eval:main"
+
+# kaggle
+kaggle_preprocess="cinema.data.kaggle.preprocess:main"
+kaggle_seg_eval="cinema.segmentation.kaggle.eval:main"
+
+# rescan
+rescan_preprocess="cinema.data.rescan.preprocess:main"
+rescan_seg_train="cinema.segmentation.rescan.train:main"
+rescan_seg_eval="cinema.segmentation.rescan.eval:main"
+
+# emidec
+emidec_preprocess="cinema.data.emidec.preprocess:main"
+emidec_seg_train="cinema.segmentation.emidec.train:main"
+emidec_seg_eval="cinema.segmentation.emidec.eval:main"
+emidec_clf_train="cinema.classification.emidec.train:main"
+emidec_clf_eval="cinema.classification.emidec.eval:main"
+emidec_reg_train="cinema.regression.emidec.train:main"
+emidec_reg_eval="cinema.regression.emidec.eval:main"
+
+# myops2020
+myops2020_preprocess="cinema.data.myops2020.preprocess:main"
+myops2020_seg_train="cinema.segmentation.myops2020.train:main"
+myops2020_seg_eval="cinema.segmentation.myops2020.eval:main"
+
+# landmark_detection
+landmark_preprocess="cinema.data.landmark_detection.preprocess:main"
+landmark_seg_train="cinema.segmentation.landmark_detection.train:main"
+landmark_seg_eval="cinema.segmentation.landmark_detection.eval:main"
+landmark_reg_train="cinema.regression.landmark_detection.train:main"
+landmark_reg_eval="cinema.regression.landmark_detection.eval:main"
+
+[tool.setuptools]
+packages = ["cinema"]
+package-dir = {"cinema"="./cinema"}
+
+# pytest
+[tool.pytest.ini_options]
+markers = [
+    "slow", # slow unit tests
+    "integration", # integration tests
+]
+filterwarnings = [
+    # https://github.com/googleapis/python-api-common-protos/issues/23
+    "ignore::DeprecationWarning:tensorflow_metadata.*",
+]
+
+# pre-commit
+[tool.mypy]
+python_version = "3.11"
+warn_unused_configs = true
+ignore_missing_imports = true
+disable_error_code = ["misc","attr-defined","call-arg","name-defined","operator"]
+show_error_codes = true
+files = "**/*.py"
+
+[tool.ruff]
+# https://docs.astral.sh/ruff/configuration/
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+
+# Same as Black.
+line-length = 120
+indent-width = 4
+
+# Assume Python 3.11
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "ANN002", # MissingTypeArgs
+    "ANN003", # MissingTypeKwargs
+    "COM812",  # Missing trailing comma
+    "EM101", # Exception must not use a string literal, assign to variable first
+    "EM102", # Exception must not use an f-string literal, assign to variable first
+    "ERA001", # Found commented-out code
+    "FBT001",  # Boolean-typed positional argument in function definition
+    "FBT002",  # Boolean default positional argument in function definition
+    "FBT003",  # Boolean positional value in function call
+    "FIX002", # Line contains TODO, consider resolving the issue
+    "G004", # Logging statement uses f-string
+    "PLR0913", # Too many arguments to function call
+    "PLR0915", # Too many statements
+    "PLE0605", # Invalid format for `__all__`, must be `tuple` or `list`
+    "PLR2004", # Magic value used in comparison
+    "PLR0912", # Too many branches
+    "RET504", # Unnecessary variable assignment before `return` statement
+    "S301", # `pickle` and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue
+    "TD002", # Missing author in TODO
+    "TD003", # Missing issue link on the line following this TODO
+    "TRY003", # Avoid specifying long messages outside the exception class
+]
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+exclude = ["**/*.ipynb"]
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+exclude = ["**/*.ipynb"]
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = false
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint.mccabe]
+# Unlike Flake8, default to a complexity level of 10.
+max-complexity = 10
+
+[tool.ruff.lint.per-file-ignores]
+"test_*.py" = ["S101"]
+"*_test.py" = ["S101"]
+
+[tool.ruff.lint.pydocstyle]
+# Use Google-style docstrings.
+convention = "google"
+
+[tool.ruff.lint.pylint]
+allow-magic-value-types = ["int", "str"]
+
+[tool.ruff.lint.isort]
+known-third-party = ["wandb"]
