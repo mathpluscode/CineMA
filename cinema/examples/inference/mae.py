@@ -1,0 +1,140 @@
+"""Example script to reconstruct masked patches."""
+
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import SimpleITK as sitk  # noqa: N813
+import torch
+from monai.transforms import Compose, ScaleIntensityd, SpatialPadd
+
+from cinema import CineMA, patchify, unpatchify
+
+
+def plot_mae_reconstruction(
+    image_dict: dict[str, torch.Tensor],
+    reconstructed_dict: dict[str, torch.Tensor],
+    masks_dict: dict[str, torch.Tensor],
+    filepath: Path,
+) -> None:
+    """Plot MAE reconstruction.
+
+    Args:
+        image_dict: Dictionary of original images
+        reconstructed_dict: Dictionary of reconstructed images
+        masks_dict: Dictionary of masks
+        filepath: path to save the PNG file.
+    """
+    sax_slices = image_dict["sax"].shape[-1]
+    n_rows = sax_slices
+    n_cols = 4
+    fig, axs = plt.subplots(n_rows, n_cols, figsize=(n_cols * 2, n_rows * 2), dpi=300)
+    reconstructed = reconstructed_dict["sax"]
+    image = image_dict["sax"]
+    masked = (1 - masks_dict["sax"]) * image
+    error = np.abs(reconstructed - image)
+
+    for j in range(sax_slices):
+        axs[j, 0].set_ylabel(f"SAX slice {j}")
+        axs[j, 0].imshow(image[..., j], cmap="gray")
+        axs[j, 1].imshow(masked[..., j], cmap="gray")
+        axs[j, 2].imshow(reconstructed[..., j], cmap="gray")
+        axs[j, 3].imshow(error[..., j], cmap="gray")
+    axs[0, 0].set_title("Original")
+    axs[0, 1].set_title("Masked")
+    axs[0, 2].set_title("Reconstructed")
+    axs[0, 3].set_title("Error")
+    # remove the x and y ticks
+    for i in range(n_rows):
+        for j in range(n_cols):
+            axs[i, j].set_xticks([])
+            axs[i, j].set_yticks([])
+    fig.tight_layout()
+    fig.subplots_adjust(wspace=0, hspace=0)
+    fig.savefig(filepath, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+
+def reconstruct_images(
+    batch: dict[str, torch.Tensor],
+    pred_dict: dict[str, torch.Tensor],
+    enc_mask_dict: dict[str, torch.Tensor],
+    patch_size_dict: dict[str, tuple[int, ...]],
+    grid_size_dict: dict[str, tuple[int, ...]],
+    sax_slices: int,
+) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
+    """Reconstruct images from predicted patches."""
+    view = "sax"
+    patches = patchify(image=batch[view], patch_size=patch_size_dict[view])
+    patches[enc_mask_dict[view]] = pred_dict[view]
+    masks = torch.zeros_like(patches)
+    masks[enc_mask_dict[view]] = 1
+    masks = unpatchify(masks, patch_size=patch_size_dict[view], grid_size=grid_size_dict[view])
+    reconstructed = unpatchify(
+        patches,
+        patch_size=patch_size_dict[view],
+        grid_size=grid_size_dict[view],
+    )
+    reconstructed_dict = {view: reconstructed.detach().to(torch.float32).cpu().numpy()[0, 0, ..., :sax_slices]}
+    masks_dict = {view: masks.detach().to(torch.float32).cpu().numpy()[0, 0, ..., :sax_slices]}
+    return reconstructed_dict, masks_dict
+
+
+def run(device: torch.device, dtype: torch.dtype) -> None:
+    """Run MAE reconstruction."""
+    t = 0  # which time frame to use
+
+    # load model
+    model = CineMA.from_pretrained()
+    model.eval()
+    model.to(device)
+
+    # load sample data and form a batch of size 1
+    transform = Compose(
+        [
+            ScaleIntensityd(keys="sax"),
+            SpatialPadd(keys="sax", spatial_size=(192, 192, 16), method="end"),
+        ]
+    )
+    # (x, y, z, t)
+    exp_dir = Path(__file__).parent.parent.resolve()
+    sax_image = np.transpose(sitk.GetArrayFromImage(sitk.ReadImage(exp_dir / "data/acdc/sax_t.nii.gz")))
+
+    batch = {"sax": torch.from_numpy(sax_image[None, ..., t])}
+
+    # forward
+    sax_slices = batch["sax"].shape[-1]
+    batch = transform(batch)
+    batch = {k: v[None, ...].to(device=device, dtype=dtype) for k, v in batch.items()}
+    with torch.no_grad(), torch.autocast("cuda", dtype=dtype, enabled=torch.cuda.is_available()):
+        _, pred_dict, enc_mask_dict, _ = model(batch, enc_mask_ratio=0.75)
+        grid_size_dict = {k: v.patch_embed.grid_size for k, v in model.enc_down_dict.items()}
+        reconstructed_dict, masks_dict = reconstruct_images(
+            batch,
+            pred_dict,
+            enc_mask_dict,
+            model.dec_patch_size_dict,
+            grid_size_dict,
+            sax_slices,
+        )
+        batch = {k: v.detach().to(torch.float32).cpu().numpy()[0, 0] for k, v in batch.items()}
+        batch["sax"] = batch["sax"][..., :sax_slices]
+
+    # visualize
+    plot_mae_reconstruction(
+        batch,
+        reconstructed_dict,
+        masks_dict,
+        Path("mae_reconstruction.png"),
+    )
+    plt.show(block=False)
+
+
+if __name__ == "__main__":
+    dtype, device = torch.float32, torch.device("cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        if torch.cuda.is_bf16_supported():
+            dtype = torch.bfloat16
+
+    run(device, dtype)

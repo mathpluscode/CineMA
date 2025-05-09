@@ -1,0 +1,79 @@
+task: segmentation
+seed: 0
+grad_ckpt: True
+
+logging:
+  dir: wandb
+  wandb:
+    project: null
+    entity: null
+
+data:
+  name: rescan
+  dir: ~/.cache/cinema_datasets/rescan/processed
+  sax:
+    spacing: [1.0, 1.0, 10.0]
+    patch_size: [192, 192, 16]
+    in_chans: 1
+  lax:
+    spacing: [1.0, 1.0]
+    patch_size: [256, 256]
+    in_chans: 1
+  max_n_samples: -1
+  proportion: 1.0 # proportion of the dataset to use
+
+transform:
+  prob: 0.5
+  gamma: [0.5, 1.5]
+  scale_range: 0.2
+  sax:
+    rotate_range: [0, 0, 180]
+    translate_range: [60, 60, 0]
+    dropout_size: [40, 40, 2]
+  lax:
+    rotate_range: [180]
+    translate_range: [80, 80]
+    dropout_size: [50, 50]
+
+train:
+  n_workers: 4
+  clip_grad: 5.0
+  weight_decay: 0.05
+  layer_decay: 0.75
+  betas: [0.9, 0.95]
+  lr: 1e-3
+  min_lr: 1e-5
+  n_warmup_epochs: 50
+  n_epochs: 320
+  max_n_ckpts: 1
+  batch_size: 64
+  batch_size_per_device: 4
+  eval_interval: 8 # reduced as each sample has ~25 frames
+  early_stopping:
+    metric: "val_mean_dice_score"
+    mode: "max"
+    patience: 5
+    min_delta: 1e-4
+
+model:
+  name: convunetr
+  ckpt_path: null
+  freeze_pretrained: False
+  views: sax
+  out_chans: 4
+  convunetr:
+    size: base # tiny, base, large, huge
+    enc_patch_size: [4, 4, 1]
+    enc_scale_factor: [2, 2, 1]
+    enc_conv_chans: [64, 128]
+    enc_conv_n_blocks: 2
+    dec_chans: [32, 64, 128, 256, 512]
+    dec_patch_size: [2, 2, 1]
+    dec_scale_factor: [2, 2, 1]
+    dropout: 0.1
+    drop_path: 0.1
+  unet:
+    chans: [32, 64, 128, 256, 512]
+    dropout: 0.1
+    patch_size: [2, 2, 1]
+    scale_factor: [2, 2, 1]
