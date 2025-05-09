@@ -1,0 +1,72 @@
+task: classification
+seed: 0
+grad_ckpt: True
+
+logging:
+  dir: wandb
+  wandb:
+    project: null
+    entity: null
+
+data:
+  name: mnms
+  dir: null
+  sax:
+    spacing: [1.0, 1.0, 10.0]
+    patch_size: [192, 192, 16]
+    in_chans: 1
+  max_n_samples: -1
+  proportion: 1.0
+  class_column: pathology
+  # the corresponding counts in training are 54, 49, 38, 8, 1
+  # validation and test sets have other classes
+  pathology: ["DCM", "HCM", "NOR", "ARV", "HHD"]
+  sex: ["M", "F"]
+
+transform:
+  prob: 0.5
+  gamma: [0.5, 1.5]
+  scale_range: 0.2
+  sax:
+    rotate_range: [0, 0, 180]
+    translate_range: [60, 60, 0]
+
+train:
+  n_workers: 4
+  clip_grad: 5.0
+  weight_decay: 0.05
+  layer_decay: 0.75
+  betas: [0.9, 0.95]
+  label_smoothing: 0.1
+  lr: 1e-3
+  min_lr: 1e-5
+  n_warmup_epochs: 10
+  n_epochs: 800
+  max_n_ckpts: 1
+  batch_size: 64
+  batch_size_per_device: 4
+  eval_interval: 20
+  early_stopping:
+    metric: "val_mcc"
+    mode: "max"
+    patience: 5
+    min_delta: 1e-4
+
+model:
+  name: convvit # convvit, resnet
+  ckpt_path: null
+  freeze_pretrained: False
+  views: sax
+  n_frames: 2
+  out_chans: null
+  convvit:
+    size: base # tiny, base, large, huge
+    enc_patch_size: [4, 4, 1]
+    enc_scale_factor: [2, 2, 1]
+    enc_conv_chans: [64, 128]
+    enc_conv_n_blocks: 2
+    dropout: 0.1
+    drop_path: 0.1
+  resnet:
+    depth: 50 # 10, 18, 34, 50, 101, 152
+    layer_inplanes: [64, 128, 256, 512]

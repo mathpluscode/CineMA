@@ -1,0 +1,1 @@
+"""M&Ms segmentation task."""

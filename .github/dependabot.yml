@@ -1,0 +1,12 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "envs/"
+    schedule:
+      interval: "daily"
+    groups:
+      python-requirements:
+        patterns:
+          - "*"
+    ignore:
+      - dependency-name: "protobuf" # https://github.com/tensorflow/datasets/issues/4858
