@@ -1,0 +1,111 @@
+"""Example script to perform landmark localization on LAX images using fine-tuned checkpoint."""
+
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import SimpleITK as sitk  # noqa: N813
+import torch
+from monai.transforms import ScaleIntensityd
+from tqdm import tqdm
+
+from cinema import ConvUNetR, heatmap_soft_argmax
+
+
+def run(view: str, seed: int) -> None:
+    """Run landmark localization on LAX images using fine-tuned checkpoint."""
+    # load model
+    model = ConvUNetR.from_finetuned(
+        repo_id="mathpluscode/CineMA",
+        model_filename=f"finetuned/landmark_heatmap/{view}_{seed}.safetensors",
+        config_filename=f"finetuned/landmark_heatmap/{view}.yaml",
+    )
+
+    # load sample data and form a batch of size 1
+    transform = ScaleIntensityd(keys=view)
+
+    # (x, y, 1, t)
+    exp_dir = Path(__file__).parent.parent.resolve()
+    images = np.transpose(sitk.GetArrayFromImage(sitk.ReadImage(exp_dir / f"data/ukb/1/1_{view}.nii.gz")))
+    n_frames = images.shape[-1]
+    probs_list = []
+    preds_list = []
+    lv_lengths = []
+    for t in tqdm(range(n_frames), total=n_frames):
+        batch = transform({view: torch.from_numpy(images[None, ..., 0, t]).to(dtype=torch.float32)})
+        batch = {k: v[None, ...] for k, v in batch.items()}  # batch size 1
+        with torch.no_grad(), torch.autocast("cuda", enabled=torch.cuda.is_available()):
+            logits = model(batch)[view]  # (1, 3, x, y)
+        probs = torch.sigmoid(logits)  # (1, 3, width, height)
+        probs_list.append(probs[0].detach().cpu().numpy())
+        coords = heatmap_soft_argmax(probs)[0].numpy()
+        coords = [int(x) for x in coords]
+
+        # draw predictions with cross
+        preds = images[..., t] * np.array([1, 1, 1])[None, None, :]
+        preds = preds.clip(0, 255).astype(np.uint8)
+        for i in range(3):
+            pred_x, pred_y = coords[2 * i], coords[2 * i + 1]
+            x1, x2 = max(0, pred_x - 9), min(preds.shape[0], pred_x + 10)
+            y1, y2 = max(0, pred_y - 9), min(preds.shape[1], pred_y + 10)
+            preds[pred_x, y1:y2] = [255, 0, 0]
+            preds[x1:x2, pred_y] = [255, 0, 0]
+        preds_list.append(preds)
+
+        # record LV length
+        x1, y1, x2, y2, x3, y3 = coords
+        lv_len = (((x1 + x2) / 2 - x3) ** 2 + ((y1 + y2) / 2 - y3) ** 2) ** 0.5
+        lv_lengths.append(lv_len)
+    probs = np.stack(probs_list, axis=-1)  # (3, x, y, t)
+    preds = np.stack(preds_list, axis=-1)  # (3, x, y, t)
+
+    # visualise heatmaps
+    _, axs = plt.subplots(10, 5, figsize=(10, 20))
+    for i in range(10):
+        for j in range(5):
+            t = i * 5 + j
+            axs[i, j].imshow(images[..., 0, t], cmap="gray")
+            axs[i, j].imshow((probs[0, ..., t, None]) * np.array([108 / 255, 142 / 255, 191 / 255, 1.0]))
+            axs[i, j].imshow((probs[1, ..., t, None]) * np.array([214 / 255, 182 / 255, 86 / 255, 1.0]))
+            axs[i, j].imshow((probs[2, ..., t, None]) * np.array([130 / 255, 179 / 255, 102 / 255, 1.0]))
+            axs[i, j].set_xticks([])
+            axs[i, j].set_yticks([])
+            if j == 0:
+                axs[i, j].set_ylabel(f"t = {t}")
+    plt.subplots_adjust(wspace=0.02, hspace=0.02)
+    plt.savefig(f"landmark_heatmap_{view}_{seed}.png", dpi=300, bbox_inches="tight")
+    plt.show(block=False)
+
+    # visualise landmarks
+    _, axs = plt.subplots(10, 5, figsize=(10, 20))
+    for i in range(10):
+        for j in range(5):
+            t = i * 5 + j
+            axs[i, j].imshow(preds[..., t])
+            axs[i, j].set_xticks([])
+            axs[i, j].set_yticks([])
+            if j == 0:
+                axs[i, j].set_ylabel(f"t = {t}")
+    plt.subplots_adjust(wspace=0.02, hspace=0.02)
+    plt.savefig(f"landmark_heatmap_landmark_{view}_{seed}.png", dpi=300, bbox_inches="tight")
+    plt.show(block=False)
+
+    # visualise LV length changes
+    plt.figure(figsize=(4, 3))
+    if view == "lax_2c":
+        # first frame is empty for this particular example
+        lv_lengths = lv_lengths[1:]
+    lvef = (max(lv_lengths) - min(lv_lengths)) / max(lv_lengths) * 100
+    plt.plot(lv_lengths, color="#82B366", label="LV")
+    plt.xlabel("Frame")
+    plt.ylabel("Length (mm)")
+    plt.title(f"LVEF = {lvef:.2f}%")
+    plt.legend(loc="lower right")
+    plt.savefig(f"landmark_heatmap_lv_length_{view}_{seed}.png", dpi=300, bbox_inches="tight")
+    plt.show(block=False)
+
+
+if __name__ == "__main__":
+    for view in ["lax_2c", "lax_4c"]:
+        for seed in range(3):
+            run(view, seed)

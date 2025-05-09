@@ -1,0 +1,55 @@
+seed: 0
+ddp: True
+grad_ckpt: True
+
+logging:
+  dir: wandb
+  wandb:
+    project: null
+    entity: null
+
+data:
+  dir: null
+  max_n_samples: -1 # in total 69779
+  sax:
+    spacing: [1.0, 1.0, 10.0]
+    patch_size: [192, 192, 16]
+    in_chans: 1
+  lax:
+    spacing: [1.0, 1.0]
+    patch_size: [256, 256]
+    in_chans: 1
+
+transform:
+  prob: 0.5
+  scale_range: 0.2
+  sax:
+    rotate_range: [0, 0, 180]
+    translate_range: [48, 48, 0]
+  lax:
+    rotate_range: [180]
+    translate_range: [64, 64]
+
+train:
+  ckpt_path: null
+  n_workers_per_device: 16
+  clip_grad: 5.0
+  weight_decay: 0.05
+  betas: [0.9, 0.95]
+  lr: 1e-3
+  min_lr: 1e-6
+  n_warmup_epochs: 10
+  n_epochs: 800
+  max_n_ckpts: 1
+  batch_size: 64
+  batch_size_per_device: 16
+  enc_mask_ratio: 0.75
+
+model:
+  size: base # tiny, base, large, huge
+  views: ["sax", "lax_2c", "lax_3c", "lax_4c"] # sax, lax_2c, lax_3c, lax_4c
+  ckpt_path: null
+  patch_size: [4, 4, 1]
+  scale_factor: [2, 2, 1]
+  enc_conv_chans: [64, 128]
+  enc_conv_n_blocks: 2

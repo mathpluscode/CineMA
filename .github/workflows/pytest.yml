@@ -1,0 +1,53 @@
+name: pytest
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Remove unnecessary packages
+        # https://github.com/actions/runner-images/issues/2840#issuecomment-790492173
+        run: |
+          echo "=== Before pruning ==="
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "=== After pruning ==="
+          df -h
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          check-latest: true
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+          cache-dependency-path: |
+            envs/environment.yml
+            envs/requirements.txt
+            pyproject.toml
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install --upgrade torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install kaleido
+          pip install -r envs/requirements.txt
+          pip install -e .
+      - name: Test with pytest
+        run: |
+          pytest --cov --cov-branch --cov-report=xml -m "not integration"
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
