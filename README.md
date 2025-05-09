@@ -33,6 +33,8 @@ You can install the package inside a [Conda](https://github.com/conda-forge/mini
 commands
 
 ```bash
+git clone https://github.com/mathpluscode/CineMA.git
+cd CineMA
 conda env update -f envs/environment.yml
 conda activate cinema
 pip install -e .
