@@ -17,8 +17,8 @@ def run(view: str, seed: int) -> None:
     # load model
     model = ConvViT.from_finetuned(
         repo_id="mathpluscode/CineMA",
-        model_filename=f"finetuned/landmark_coordinate/{view}_{seed}.safetensors",
-        config_filename=f"finetuned/landmark_coordinate/{view}.yaml",
+        model_filename=f"finetuned/landmark_coordinate/{view}/{view}_{seed}.safetensors",
+        config_filename=f"finetuned/landmark_coordinate/{view}/config.yaml",
     )
 
     # load sample data and form a batch of size 1

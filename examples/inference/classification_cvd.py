@@ -17,7 +17,7 @@ def run(trained_dataset: str, view: str, seed: int) -> None:
     # load config to get class names
     config_path = hf_hub_download(
         repo_id="mathpluscode/CineMA",
-        filename=f"finetuned/classification_cvd/{trained_dataset}_{view}.yaml",
+        filename=f"finetuned/classification_cvd/{trained_dataset}_{view}/config.yaml",
     )
     config = OmegaConf.load(config_path)
     classes = list(config.data[config.data.class_column])
@@ -25,8 +25,8 @@ def run(trained_dataset: str, view: str, seed: int) -> None:
     # load model
     model = ConvViT.from_finetuned(
         repo_id="mathpluscode/CineMA",
-        model_filename=f"finetuned/classification_cvd/{trained_dataset}_{view}_{seed}.safetensors",
-        config_filename=f"finetuned/classification_cvd/{trained_dataset}_{view}.yaml",
+        model_filename=f"finetuned/classification_cvd/{trained_dataset}_{view}/{trained_dataset}_{view}_{seed}.safetensors",
+        config_filename=f"finetuned/classification_cvd/{trained_dataset}_{view}/config.yaml",
     )
 
     # load sample data from mnms2 of class HCM and form a batch of size 1

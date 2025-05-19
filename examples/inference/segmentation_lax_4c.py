@@ -46,14 +46,15 @@ def run(seed: int) -> None:
     trained_dataset = "mnms2"
 
     # load model
+    view = "lax_4c"
     model = ConvUNetR.from_finetuned(
         repo_id="mathpluscode/CineMA",
-        model_filename=f"finetuned/segmentation/{trained_dataset}_lax_4c_{seed}.safetensors",
-        config_filename="finetuned/segmentation/lax_4c.yaml",
+        model_filename=f"finetuned/segmentation/{trained_dataset}_{view}/{trained_dataset}_{view}_{seed}.safetensors",
+        config_filename=f"finetuned/segmentation/{trained_dataset}_{view}/config.yaml",
     )
 
     # load sample data and form a batch of size 1
-    transform = ScaleIntensityd(keys="lax_4c")
+    transform = ScaleIntensityd(keys=view)
 
     # (x, y, 1, t)
     exp_dir = Path(__file__).parent.parent.resolve()
@@ -61,10 +62,10 @@ def run(seed: int) -> None:
     n_frames = images.shape[-1]
     labels_list = []
     for t in tqdm(range(n_frames), total=n_frames):
-        batch = transform({"lax_4c": torch.from_numpy(images[None, ..., 0, t]).to(dtype=torch.float32)})
+        batch = transform({view: torch.from_numpy(images[None, ..., 0, t]).to(dtype=torch.float32)})
         batch = {k: v[None, ...] for k, v in batch.items()}  # batch size 1
         with torch.no_grad(), torch.autocast("cuda", enabled=torch.cuda.is_available()):
-            logits = model(batch)["lax_4c"]  # (1, 4, x, y)
+            logits = model(batch)[view]  # (1, 4, x, y)
         labels = torch.argmax(logits, dim=1)[0].detach().numpy()  # (x, y)
 
         # the model seems to hallucinate an additional right ventricle and myocardium sometimes
@@ -88,7 +89,7 @@ def run(seed: int) -> None:
             if j == 0:
                 axs[i, j].set_ylabel(f"t = {t}")
     plt.subplots_adjust(wspace=0.02, hspace=0.02)
-    plt.savefig(f"segmentation_lax_4c_mask_{trained_dataset}_{seed}.png", dpi=300, bbox_inches="tight")
+    plt.savefig(f"segmentation_{view}_mask_{trained_dataset}_{seed}.png", dpi=300, bbox_inches="tight")
     plt.show(block=False)
 
     # visualise area changes
@@ -105,7 +106,7 @@ def run(seed: int) -> None:
     plt.ylabel("Area (mm2)")
     plt.title(f"LVEF = {lvef:.2f}%, RVEF = {rvef:.2f}%")
     plt.legend(loc="lower right")
-    plt.savefig(f"segmentation_lax_4c_mask_area_{trained_dataset}_{seed}.png", dpi=300, bbox_inches="tight")
+    plt.savefig(f"segmentation_{view}_mask_area_{trained_dataset}_{seed}.png", dpi=300, bbox_inches="tight")
     plt.show(block=False)
 
 

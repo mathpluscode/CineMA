@@ -15,17 +15,18 @@ from cinema import ConvUNetR
 def run(trained_dataset: str, seed: int) -> None:
     """Run segmentation on SAX images using fine-tuned checkpoint."""
     # load model
+    view = "sax"
     model = ConvUNetR.from_finetuned(
         repo_id="mathpluscode/CineMA",
-        model_filename=f"finetuned/segmentation/{trained_dataset}_sax_{seed}.safetensors",
-        config_filename="finetuned/segmentation/sax.yaml",  # same config for all models
+        model_filename=f"finetuned/segmentation/{trained_dataset}_{view}/{trained_dataset}_{view}_{seed}.safetensors",
+        config_filename=f"finetuned/segmentation/{trained_dataset}_{view}/config.yaml",  # same config for all models
     )
 
     # load sample data and form a batch of size 1
     transform = Compose(
         [
-            ScaleIntensityd(keys="sax"),
-            SpatialPadd(keys="sax", spatial_size=(192, 192, 16), method="end", lazy=True, allow_missing_keys=True),
+            ScaleIntensityd(keys=view),
+            SpatialPadd(keys=view, spatial_size=(192, 192, 16), method="end", lazy=True, allow_missing_keys=True),
         ]
     )
 
@@ -35,10 +36,10 @@ def run(trained_dataset: str, seed: int) -> None:
     n_slices, n_frames = images.shape[-2:]
     labels_list = []
     for t in tqdm(range(n_frames), total=n_frames):
-        batch = transform({"sax": torch.from_numpy(images[None, ..., t]).to(dtype=torch.float32)})
+        batch = transform({view: torch.from_numpy(images[None, ..., t]).to(dtype=torch.float32)})
         batch = {k: v[None, ...] for k, v in batch.items()}  # batch size 1
         with torch.no_grad(), torch.autocast("cuda", enabled=torch.cuda.is_available()):
-            logits = model(batch)["sax"]  # (1, 4, x, y, z)
+            logits = model(batch)[view]  # (1, 4, x, y, z)
         labels_list.append(torch.argmax(logits, dim=1)[0, ..., :n_slices])
     labels = torch.stack(labels_list, dim=-1).detach().numpy()  # (x, y, z, t)
 
@@ -57,7 +58,7 @@ def run(trained_dataset: str, seed: int) -> None:
                 axs[i, z].set_ylabel(f"t = {t}")
     axs[0, 4].set_title("SAX Slices")
     plt.subplots_adjust(wspace=0.02, hspace=0.02)
-    plt.savefig(f"segmentation_sax_mask_{trained_dataset}_{seed}.png", dpi=300, bbox_inches="tight")
+    plt.savefig(f"segmentation_{view}_mask_{trained_dataset}_{seed}.png", dpi=300, bbox_inches="tight")
     plt.show(block=False)
 
     # visualise volume changes
@@ -74,7 +75,7 @@ def run(trained_dataset: str, seed: int) -> None:
     plt.ylabel("Volume (ml)")
     plt.title(f"LVEF = {lvef:.2f}%, RVEF = {rvef:.2f}%")
     plt.legend(loc="lower right")
-    plt.savefig(f"segmentation_sax_mask_volume_{trained_dataset}_{seed}.png", dpi=300, bbox_inches="tight")
+    plt.savefig(f"segmentation_{view}_mask_volume_{trained_dataset}_{seed}.png", dpi=300, bbox_inches="tight")
     plt.show(block=False)
 
 

@@ -15,7 +15,7 @@
 
 ## Overview
 
-**CineMA** is a foundation model for **Cine** cardiac magnetic resonance (CMR) imaging based on
+**CineMA** is a vision foundation model for **Cine** cardiac magnetic resonance (CMR) imaging based on
 **M**asked-**A**utoencoder. CineMA has been pre-trained on UK Biobank data and fine-tuned on multiple clinically
 relevant tasks such as ventricle and myocaridum segmentation, ejection fraction (EF) regression, cardiovascular disease
 (CVD) detection and classification, and mid-valve plane and apical landmark localization. The model has been evaluated
@@ -73,7 +73,7 @@ python examples/inference/landmark_coordinate.py
 | Landmark localization by heatmap regression     | LAX 2C or LAX 4C | 1                | [landmark_heatmap.py](examples/inference/landmark_heatmap.py)           |
 | Landmark localization by coordinates regression | LAX 2C or LAX 4C | 1                | [landmark_coordinate.py](examples/inference/landmark_coordinate.py)     |
 
-### Use pre-trained models for fine-tuning
+### Use pre-trained models
 
 The pre-trained CineMA model backbone is available at https://huggingface.co/mathpluscode/CineMA. Following scripts
 demonstrated how to fine-tune this backbone using
@@ -91,10 +91,17 @@ python examples/train/regression.py
 | Cardiovascular disease classification | [classification.py](examples/train/classification.py) |
 | Ejection fraction regression          | [regression.py](examples/train/regression.py)         |
 
-For other datasets, pre-process can be performed using the provided scripts following the documentations. Note that it
-is recommended to download the data under `~/.cache/cinema_datasets` as the integration tests uses this path. For
-instance, the mnms preprocessed data would be `~/.cache/cinema_datasets/mnms/processed`. Otherwise define the path using
-environment variable `CINEMA_DATA_DIR`.
+Another two scripts demonstrated the masking and prediction process of MAE and the feature extraction from MAE.
+
+```bash
+python examples/inference/mae.py
+python examples/inference/mae_feature_extraction.py
+```
+
+For fine-tuning CineMA on other datasets, pre-process can be performed using the provided scripts following the
+documentations. Note that it is recommended to download the data under `~/.cache/cinema_datasets` as the integration
+tests uses this path. For instance, the mnms preprocessed data would be `~/.cache/cinema_datasets/mnms/processed`.
+Otherwise define the path using environment variable `CINEMA_DATA_DIR`.
 
 | Training Data | Documentations                               |
 | ------------- | -------------------------------------------- |

@@ -629,7 +629,7 @@ class CineMA(nn.Module):
         # download config
         config_path = hf_hub_download(
             repo_id="mathpluscode/CineMA",
-            filename="pretrained/cinema.yaml",
+            filename="pretrained/config.yaml",
             **kwargs,
         )
         logger.info(f"Cached model config to {config_path}.")

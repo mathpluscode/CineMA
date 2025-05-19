@@ -18,7 +18,7 @@ def run(seed: int) -> None:
     # load config to get class names
     config_path = hf_hub_download(
         repo_id="mathpluscode/CineMA",
-        filename=f"finetuned/regression_bmi/{trained_dataset}_{view}.yaml",
+        filename=f"finetuned/regression_bmi/{trained_dataset}_{view}/config.yaml",
     )
     config = OmegaConf.load(config_path)
     mean = config.data[config.data.regression_column].mean
@@ -27,8 +27,8 @@ def run(seed: int) -> None:
     # load model
     model = ConvViT.from_finetuned(
         repo_id="mathpluscode/CineMA",
-        model_filename=f"finetuned/regression_bmi/{trained_dataset}_{view}_{seed}.safetensors",
-        config_filename=f"finetuned/regression_bmi/{trained_dataset}_{view}.yaml",
+        model_filename=f"finetuned/regression_bmi/{trained_dataset}_{view}/{trained_dataset}_{view}_{seed}.safetensors",
+        config_filename=f"finetuned/regression_bmi/{trained_dataset}_{view}/config.yaml",
     )
 
     # load sample data

@@ -149,5 +149,5 @@ wandb/
 **/*.safetensors
 
 # docs
-examples/*.png
 out/
+**/*.png

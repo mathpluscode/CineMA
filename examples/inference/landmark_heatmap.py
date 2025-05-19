@@ -17,8 +17,8 @@ def run(view: str, seed: int) -> None:
     # load model
     model = ConvUNetR.from_finetuned(
         repo_id="mathpluscode/CineMA",
-        model_filename=f"finetuned/landmark_heatmap/{view}_{seed}.safetensors",
-        config_filename=f"finetuned/landmark_heatmap/{view}.yaml",
+        model_filename=f"finetuned/landmark_heatmap/{view}/{view}_{seed}.safetensors",
+        config_filename=f"finetuned/landmark_heatmap/{view}/config.yaml",
     )
 
     # load sample data and form a batch of size 1
