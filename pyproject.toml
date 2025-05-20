@@ -9,7 +9,7 @@ authors = [
     {name = "Yunguan Fu", email = "yunguan.fu.18@ucl.ac.uk"},
 ]
 description = "CineMA: A Foundation Model for Cine Cardiac MRI."
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = {text = "MIT"}
 version = "1.0.0"
 
