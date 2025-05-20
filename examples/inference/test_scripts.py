@@ -1,6 +1,7 @@
 """Test all scripts."""
 
 import pytest
+import torch
 
 from .classification_cvd import run as run_clf_cvd
 from .classification_sex import run as run_clf_sex
@@ -19,38 +20,38 @@ from .segmentation_sax import run as run_segmentation_sax
 @pytest.mark.integration
 def test_mae_scripts() -> None:
     """Execute all scripts."""
-    run_mae()
-    run_mae_feature_extraction()
+    run_mae("cpu", torch.float32)
+    run_mae_feature_extraction("cpu", torch.float32)
 
 
 @pytest.mark.integration
 def test_classifcation_scripts() -> None:
     """Execute all scripts."""
-    run_clf_cvd("acdc", "sax", 0)
-    run_clf_cvd("mnms2", "lax_4c", 0)
-    run_clf_sex(0)
-    run_clf_vendor("sax", 0)
-    run_clf_vendor("lax_4c", 0)
+    run_clf_cvd("acdc", "sax", 0, "cpu", torch.float32)
+    run_clf_cvd("mnms2", "lax_4c", 0, "cpu", torch.float32)
+    run_clf_sex(0, "cpu", torch.float32)
+    run_clf_vendor("sax", 0, "cpu", torch.float32)
+    run_clf_vendor("lax_4c", 0, "cpu", torch.float32)
 
 
 @pytest.mark.integration
 def test_regression_scripts() -> None:
     """Execute all scripts."""
-    run_regression_age(0)
-    run_regression_bmi(0)
-    run_regression_ef("mnms", "sax", 0)
-    run_regression_ef("mnms2", "sax", 0)
+    run_regression_age(0, "cpu", torch.float32)
+    run_regression_bmi(0, "cpu", torch.float32)
+    run_regression_ef("mnms", "sax", 0, "cpu", torch.float32)
+    run_regression_ef("mnms2", "sax", 0, "cpu", torch.float32)
 
 
 @pytest.mark.integration
 def test_landmark_scripts() -> None:
     """Execute all scripts."""
-    run_landmark_coordinate("lax_2c", 0)
-    run_landmark_heatmap("lax_2c", 0)
+    run_landmark_coordinate("lax_2c", 0, "cpu", torch.float32)
+    run_landmark_heatmap("lax_2c", 0, "cpu", torch.float32)
 
 
 @pytest.mark.integration
 def test_segmentation_scripts() -> None:
     """Execute all scripts."""
-    run_segmentation_lax_4c(0)
-    run_segmentation_sax("mnms2", 0)
+    run_segmentation_lax_4c("mnms2", 0, "cpu", torch.float32)
+    run_segmentation_sax("mnms2", 0, "cpu", torch.float32)

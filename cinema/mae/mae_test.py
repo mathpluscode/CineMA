@@ -125,7 +125,7 @@ def test_conv_mae_size(
     # value can be nan if target is empty
     # this is unlikely to happen with large mask_ratio
     if min(ns_masked) > 0:
-        assert not np.isnan(loss.detach().numpy())
+        assert not np.isnan(loss.detach().cpu().numpy())
         for v in metrics.values():
             assert not np.isnan(v.detach())
             assert v.shape == ()

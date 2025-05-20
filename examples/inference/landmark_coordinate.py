@@ -12,7 +12,7 @@ from tqdm import tqdm
 from cinema import ConvViT
 
 
-def run(view: str, seed: int) -> None:
+def run(view: str, seed: int, device: torch.device, dtype: torch.dtype) -> None:
     """Run landmark localization on LAX images using fine-tuned checkpoint."""
     # load model
     model = ConvViT.from_finetuned(
@@ -20,6 +20,7 @@ def run(view: str, seed: int) -> None:
         model_filename=f"finetuned/landmark_coordinate/{view}/{view}_{seed}.safetensors",
         config_filename=f"finetuned/landmark_coordinate/{view}/config.yaml",
     )
+    model.to(device)
 
     # load sample data and form a batch of size 1
     transform = ScaleIntensityd(keys=view)
@@ -31,9 +32,9 @@ def run(view: str, seed: int) -> None:
     preds_list = []
     lv_lengths = []
     for t in tqdm(range(n_frames), total=n_frames):
-        batch = transform({view: torch.from_numpy(images[None, ..., 0, t]).to(dtype=torch.float32)})
-        batch = {k: v[None, ...] for k, v in batch.items()}  # batch size 1
-        with torch.no_grad(), torch.autocast("cuda", enabled=torch.cuda.is_available()):
+        batch = transform({view: torch.from_numpy(images[None, ..., 0, t])})
+        batch = {k: v[None, ...].to(device=device, dtype=dtype) for k, v in batch.items()}
+        with torch.no_grad(), torch.autocast("cuda", dtype=dtype, enabled=torch.cuda.is_available()):
             coords = model(batch)[0].numpy()  # (6,)
         coords *= np.array([w, h, w, h, w, h])
         coords = [int(x) for x in coords]
@@ -85,6 +86,12 @@ def run(view: str, seed: int) -> None:
 
 
 if __name__ == "__main__":
+    dtype, device = torch.float32, torch.device("cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        if torch.cuda.is_bf16_supported():
+            dtype = torch.bfloat16
+
     for view in ["lax_2c", "lax_4c"]:
         for seed in range(3):
-            run(view, seed)
+            run(view, seed, device, dtype)

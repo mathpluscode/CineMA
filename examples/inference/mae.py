@@ -11,17 +11,18 @@ from monai.transforms import Compose, ScaleIntensityd, SpatialPadd
 from cinema import CineMA, patchify, unpatchify
 
 
-def run() -> None:
+def run(device: torch.device, dtype: torch.dtype) -> None:
     """Run MAE reconstruction."""
     # load model
     model = CineMA.from_pretrained()
+    model.to(device)
     model.eval()
 
     # load sample data and form a batch of size 1
     transform = Compose(
         [
             ScaleIntensityd(keys=("sax", "lax_2c", "lax_3c", "lax_4c"), allow_missing_keys=True),
-            SpatialPadd(keys="sax", spatial_size=(192, 192, 16), method="end", lazy=True, allow_missing_keys=True),
+            SpatialPadd(keys="sax", spatial_size=(192, 192, 16), method="end"),
             SpatialPadd(
                 keys=("lax_2c", "lax_3c", "lax_4c"),
                 spatial_size=(256, 256),
@@ -47,17 +48,17 @@ def run() -> None:
     )
     t = 25  # which time frame to use
     batch = {
-        "sax": sax_image[None, ..., t].to(dtype=torch.float32),
-        "lax_2c": lax_2c_image[None, ..., 0, t].to(dtype=torch.float32),
-        "lax_3c": lax_3c_image[None, ..., 0, t].to(dtype=torch.float32),
-        "lax_4c": lax_4c_image[None, ..., 0, t].to(dtype=torch.float32),
+        "sax": sax_image[None, ..., t],
+        "lax_2c": lax_2c_image[None, ..., 0, t],
+        "lax_3c": lax_3c_image[None, ..., 0, t],
+        "lax_4c": lax_4c_image[None, ..., 0, t],
     }
     batch = transform(batch)
     print(f"SAX view had originally {sax_image.shape[-2]} slices, now zero-padded to {batch['sax'].shape[-1]} slices.")  # noqa: T201
-    batch = {k: v[None, ...] for k, v in batch.items()}  # batch size 1
+    batch = {k: v[None, ...].to(device=device, dtype=dtype) for k, v in batch.items()}
 
     # forward
-    with torch.no_grad(), torch.autocast("cuda", enabled=torch.cuda.is_available()):
+    with torch.no_grad(), torch.autocast("cuda", dtype=dtype, enabled=torch.cuda.is_available()):
         _, pred_dict, enc_mask_dict, _ = model(batch, enc_mask_ratio=0.75)
 
     # visualize
@@ -76,8 +77,8 @@ def run() -> None:
             patch_size=model.dec_patch_size_dict[view],
             grid_size=model.enc_down_dict[view].patch_embed.grid_size,
         )
-        reconstructed = reconstructed[0, 0].detach().numpy()
-        image = batch[view][0, 0].detach().numpy()
+        reconstructed = reconstructed[0, 0].detach().cpu().numpy()
+        image = batch[view][0, 0].detach().cpu().numpy()
         error = np.abs(reconstructed - image)
 
         if view == "sax":
@@ -104,4 +105,10 @@ def run() -> None:
 
 
 if __name__ == "__main__":
-    run()
+    dtype, device = torch.float32, torch.device("cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        if torch.cuda.is_bf16_supported():
+            dtype = torch.bfloat16
+
+    run(device, dtype)

@@ -12,7 +12,7 @@ from omegaconf import OmegaConf
 from cinema import ConvViT
 
 
-def run(seed: int) -> None:
+def run(seed: int, device: torch.device, dtype: torch.dtype) -> None:
     """Run BMI regression using fine-tuned checkpoint."""
     trained_dataset, view = "acdc", "sax"
     # load config to get class names
@@ -30,13 +30,14 @@ def run(seed: int) -> None:
         model_filename=f"finetuned/regression_bmi/{trained_dataset}_{view}/{trained_dataset}_{view}_{seed}.safetensors",
         config_filename=f"finetuned/regression_bmi/{trained_dataset}_{view}/config.yaml",
     )
+    model.to(device)
 
     # load sample data
     spatial_size = (192, 192, 16) if view == "sax" else (256, 256)
     transform = Compose(
         [
             ScaleIntensityd(keys=view),
-            SpatialPadd(keys=view, spatial_size=spatial_size, method="end", lazy=True, allow_missing_keys=True),
+            SpatialPadd(keys=view, spatial_size=spatial_size, method="end"),
         ]
     )
     exp_dir = Path(__file__).parent.parent.resolve()
@@ -45,14 +46,20 @@ def run(seed: int) -> None:
     image = np.stack([ed_image, es_image], axis=0)  # (2, x, y, 1) or (2, x, y, z)
     if view != "sax":
         image = image[..., 0]  # (2, x, y, 1) -> (2, x, y)
-    batch = transform({view: torch.from_numpy(image).to(dtype=torch.float32)})
-    batch = {k: v[None, ...] for k, v in batch.items()}  # batch size 1
-    with torch.no_grad(), torch.autocast("cuda", enabled=torch.cuda.is_available()):
+    batch = transform({view: torch.from_numpy(image)})
+    batch = {k: v[None, ...].to(device=device, dtype=dtype) for k, v in batch.items()}
+    with torch.no_grad(), torch.autocast("cuda", dtype=dtype, enabled=torch.cuda.is_available()):
         preds = model(batch) * std + mean
     print(f"Using {view} view with model trained on {trained_dataset} dataset with seed {seed}.")  # noqa: T201
     print(f"The predicted BMI is {preds[0][0]}, ground truth should be 27.66.")  # noqa: T201
 
 
 if __name__ == "__main__":
+    dtype, device = torch.float32, torch.device("cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        if torch.cuda.is_bf16_supported():
+            dtype = torch.bfloat16
+
     for seed in range(3):
-        run(seed)
+        run(seed, device, dtype)

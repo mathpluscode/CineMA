@@ -4,7 +4,6 @@ import logging
 import sys
 from pathlib import Path
 
-import wandb
 from omegaconf import DictConfig, OmegaConf
 
 
@@ -43,7 +42,7 @@ def flatten_dict(d: dict, parent_key: str = "", sep: str = "_") -> dict:  # type
     return dict(items)
 
 
-def init_wandb(config: DictConfig, tags: list[str]) -> tuple[wandb.sdk.wandb_run.Run | None, Path]:
+def init_wandb(config: DictConfig, tags: list[str]) -> tuple:  # type:ignore[type-arg]
     """Initialize wandb.
 
     Args:
@@ -54,6 +53,8 @@ def init_wandb(config: DictConfig, tags: list[str]) -> tuple[wandb.sdk.wandb_run
         wandb run and checkpoint directory.
     """
     if config.logging.wandb.project:
+        import wandb  # lazy import
+
         wandb_run = wandb.init(
             project=config.logging.wandb.project,
             entity=config.logging.wandb.entity,

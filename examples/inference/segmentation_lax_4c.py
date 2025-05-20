@@ -41,10 +41,8 @@ def post_process(labels: np.ndarray) -> np.ndarray:
     return processed
 
 
-def run(seed: int) -> None:
+def run(trained_dataset: str, seed: int, device: torch.device, dtype: torch.dtype) -> None:
     """Run segmentation on LAX 4C images using fine-tuned checkpoint."""
-    trained_dataset = "mnms2"
-
     # load model
     view = "lax_4c"
     model = ConvUNetR.from_finetuned(
@@ -52,6 +50,7 @@ def run(seed: int) -> None:
         model_filename=f"finetuned/segmentation/{trained_dataset}_{view}/{trained_dataset}_{view}_{seed}.safetensors",
         config_filename=f"finetuned/segmentation/{trained_dataset}_{view}/config.yaml",
     )
+    model.to(device)
 
     # load sample data and form a batch of size 1
     transform = ScaleIntensityd(keys=view)
@@ -62,11 +61,11 @@ def run(seed: int) -> None:
     n_frames = images.shape[-1]
     labels_list = []
     for t in tqdm(range(n_frames), total=n_frames):
-        batch = transform({view: torch.from_numpy(images[None, ..., 0, t]).to(dtype=torch.float32)})
-        batch = {k: v[None, ...] for k, v in batch.items()}  # batch size 1
-        with torch.no_grad(), torch.autocast("cuda", enabled=torch.cuda.is_available()):
+        batch = transform({view: torch.from_numpy(images[None, ..., 0, t])})
+        batch = {k: v[None, ...].to(device=device, dtype=dtype) for k, v in batch.items()}
+        with torch.no_grad(), torch.autocast("cuda", dtype=dtype, enabled=torch.cuda.is_available()):
             logits = model(batch)[view]  # (1, 4, x, y)
-        labels = torch.argmax(logits, dim=1)[0].detach().numpy()  # (x, y)
+        labels = torch.argmax(logits, dim=1)[0].detach().cpu().numpy()  # (x, y)
 
         # the model seems to hallucinate an additional right ventricle and myocardium sometimes
         # find the connected component that is closest to left ventricle
@@ -111,5 +110,12 @@ def run(seed: int) -> None:
 
 
 if __name__ == "__main__":
+    dtype, device = torch.float32, torch.device("cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        if torch.cuda.is_bf16_supported():
+            dtype = torch.bfloat16
+
+    trained_dataset = "mnms2"
     for seed in range(3):
-        run(seed)
+        run(trained_dataset, seed, device, dtype)

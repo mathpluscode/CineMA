@@ -74,8 +74,8 @@ landmark_reg_train="cinema.regression.landmark_detection.train:main"
 landmark_reg_eval="cinema.regression.landmark_detection.eval:main"
 
 [tool.setuptools]
-packages = ["cinema"]
-package-dir = {"cinema"="./cinema"}
+packages = ["cinema", "examples"]
+package-dir = {"cinema"="./cinema", "examples"="./examples"}
 
 # pytest
 [tool.pytest.ini_options]
