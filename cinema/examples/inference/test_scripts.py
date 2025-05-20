@@ -3,18 +3,18 @@
 import pytest
 import torch
 
-from .classification_cvd import run as run_clf_cvd
-from .classification_sex import run as run_clf_sex
-from .classification_vendor import run as run_clf_vendor
-from .landmark_coordinate import run as run_landmark_coordinate
-from .landmark_heatmap import run as run_landmark_heatmap
-from .mae import run as run_mae
-from .mae_feature_extraction import run as run_mae_feature_extraction
-from .regression_age import run as run_regression_age
-from .regression_bmi import run as run_regression_bmi
-from .regression_ef import run as run_regression_ef
-from .segmentation_lax_4c import run as run_segmentation_lax_4c
-from .segmentation_sax import run as run_segmentation_sax
+from cinema.examples.inference.classification_cvd import run as run_clf_cvd
+from cinema.examples.inference.classification_sex import run as run_clf_sex
+from cinema.examples.inference.classification_vendor import run as run_clf_vendor
+from cinema.examples.inference.landmark_coordinate import run as run_landmark_coordinate
+from cinema.examples.inference.landmark_heatmap import run as run_landmark_heatmap
+from cinema.examples.inference.mae import run as run_mae
+from cinema.examples.inference.mae_feature_extraction import run as run_mae_feature_extraction
+from cinema.examples.inference.regression_age import run as run_regression_age
+from cinema.examples.inference.regression_bmi import run as run_regression_bmi
+from cinema.examples.inference.regression_ef import run as run_regression_ef
+from cinema.examples.inference.segmentation_lax_4c import run as run_segmentation_lax_4c
+from cinema.examples.inference.segmentation_sax import run as run_segmentation_sax
 
 
 @pytest.mark.integration

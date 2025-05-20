@@ -60,18 +60,18 @@ python examples/inference/landmark_heatmap.py
 python examples/inference/landmark_coordinate.py
 ```
 
-| Training Task                                   | Input View       | Input Timeframes | Inference Script                                                        |
-| ----------------------------------------------- | ---------------- | ---------------- | ----------------------------------------------------------------------- |
-| Ventricle and myocardium segmentation           | SAX              | 1                | [segmentation_sax.py](examples/inference/segmentation_sax.py)           |
-| Ventricle and myocardium segmentation           | LAX 4C           | 1                | [segmentation_lax_4c.py](examples/inference/segmentation_lax_4c.py)     |
-| CVD classification                              | SAX or LAX 4C    | 2 (ED and ES)    | [classification_cvd.py](examples/inference/classification_cvd.py)       |
-| Patient sex classification                      | SAX              | 2 (ED and ES)    | [classification_sex.py](examples/inference/classification_sex.py)       |
-| CMR machine vendor classification               | SAX or LAX 4C    | 2 (ED and ES)    | [classification_vendor.py](examples/inference/classification_vendor.py) |
-| EF regression                                   | SAX or LAX 4C    | 2 (ED and ES)    | [regression_ef.py](examples/inference/regression_ef.py)                 |
-| Patient BMI regression                          | SAX              | 2 (ED and ES)    | [regression_bmi.py](examples/inference/regression_bmi.py)               |
-| Patient age regression                          | SAX              | 2 (ED and ES)    | [regression_age.py](examples/inference/regression_age.py)               |
-| Landmark localization by heatmap regression     | LAX 2C or LAX 4C | 1                | [landmark_heatmap.py](examples/inference/landmark_heatmap.py)           |
-| Landmark localization by coordinates regression | LAX 2C or LAX 4C | 1                | [landmark_coordinate.py](examples/inference/landmark_coordinate.py)     |
+| Training Task                                   | Input View       | Input Timeframes | Inference Script                                                               |
+| ----------------------------------------------- | ---------------- | ---------------- | ------------------------------------------------------------------------------ |
+| Ventricle and myocardium segmentation           | SAX              | 1                | [segmentation_sax.py](cinema/examples/inference/segmentation_sax.py)           |
+| Ventricle and myocardium segmentation           | LAX 4C           | 1                | [segmentation_lax_4c.py](cinema/examples/inference/segmentation_lax_4c.py)     |
+| CVD classification                              | SAX or LAX 4C    | 2 (ED and ES)    | [classification_cvd.py](cinema/examples/inference/classification_cvd.py)       |
+| Patient sex classification                      | SAX              | 2 (ED and ES)    | [classification_sex.py](cinema/examples/inference/classification_sex.py)       |
+| CMR machine vendor classification               | SAX or LAX 4C    | 2 (ED and ES)    | [classification_vendor.py](cinema/examples/inference/classification_vendor.py) |
+| EF regression                                   | SAX or LAX 4C    | 2 (ED and ES)    | [regression_ef.py](cinema/examples/inference/regression_ef.py)                 |
+| Patient BMI regression                          | SAX              | 2 (ED and ES)    | [regression_bmi.py](cinema/examples/inference/regression_bmi.py)               |
+| Patient age regression                          | SAX              | 2 (ED and ES)    | [regression_age.py](cinema/examples/inference/regression_age.py)               |
+| Landmark localization by heatmap regression     | LAX 2C or LAX 4C | 1                | [landmark_heatmap.py](cinema/examples/inference/landmark_heatmap.py)           |
+| Landmark localization by coordinates regression | LAX 2C or LAX 4C | 1                | [landmark_coordinate.py](cinema/examples/inference/landmark_coordinate.py)     |
 
 ### Use pre-trained models
 
@@ -85,11 +85,11 @@ python examples/train/classification.py
 python examples/train/regression.py
 ```
 
-| Task                                  | Fine-tuning Script                                    |
-| ------------------------------------- | ----------------------------------------------------- |
-| Ventricle and myocardium segmentation | [segmentation.py](examples/train/segmentation.py)     |
-| Cardiovascular disease classification | [classification.py](examples/train/classification.py) |
-| Ejection fraction regression          | [regression.py](examples/train/regression.py)         |
+| Task                                  | Fine-tuning Script                                           |
+| ------------------------------------- | ------------------------------------------------------------ |
+| Ventricle and myocardium segmentation | [segmentation.py](cinema/examples/train/segmentation.py)     |
+| Cardiovascular disease classification | [classification.py](cinema/examples/train/classification.py) |
+| Ejection fraction regression          | [regression.py](cinema/examples/train/regression.py)         |
 
 Another two scripts demonstrated the masking and prediction process of MAE and the feature extraction from MAE.
 
@@ -137,9 +137,9 @@ The code for training and evaluating models on these datasets are available.
 ### Train your own foundation model
 
 A simplified example script for launch masked autoencoder pretraining is provided:
-[pretrain.py](examples/train/pretrain.py). For DDP supported pretraining, check
-[cinema/mae/pretrain.py](cinema/mae/pretrain.py). Check [examples/dicom_to_nifti.py](examples/dicom_to_nifti.py) for UKB
-data preprocessing.
+[pretrain.py](cinema/examples/train/pretrain.py). For DDP supported pretraining, check
+[cinema/mae/pretrain.py](cinema/mae/pretrain.py). Check [examples/dicom_to_nifti.py](cinema/examples/dicom_to_nifti.py)
+for UKB data preprocessing.
 
 ```bash
 python examples/train/pretrain.py

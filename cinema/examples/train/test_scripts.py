@@ -6,10 +6,10 @@ from tempfile import TemporaryDirectory
 import pytest
 from omegaconf import OmegaConf
 
-from .classification import run as run_clf
-from .pretrain import run as run_pretrain
-from .regression import run as run_reg
-from .segmentation import run as run_seg
+from cinema.examples.train.classification import run as run_clf
+from cinema.examples.train.pretrain import run as run_pretrain
+from cinema.examples.train.regression import run as run_reg
+from cinema.examples.train.segmentation import run as run_seg
 
 
 @pytest.mark.integration
