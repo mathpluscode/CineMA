@@ -41,6 +41,65 @@ def post_process(labels: np.ndarray) -> np.ndarray:
     return processed
 
 
+def plot_segmentations(images: np.ndarray, labels: np.ndarray, n_cols: int = 5) -> plt.Figure:
+    """Plot segmentations.
+
+    Args:
+        images: (x, y, t)
+        labels: (x, y, t)
+        n_cols: number of columns
+
+    Returns:
+        figure
+    """
+    n_frames = labels.shape[-1]
+    n_rows = n_frames // n_cols
+    fig, axs = plt.subplots(n_rows, n_cols, figsize=(n_cols, n_rows))
+    for i in range(n_rows):
+        for j in range(n_cols):
+            t = i * n_cols + j
+            axs[i, j].imshow(images[..., 0, t], cmap="gray")
+            axs[i, j].imshow((labels[..., t, None] == 1) * np.array([108 / 255, 142 / 255, 191 / 255, 0.6]))
+            axs[i, j].imshow((labels[..., t, None] == 2) * np.array([214 / 255, 182 / 255, 86 / 255, 0.6]))
+            axs[i, j].imshow((labels[..., t, None] == 3) * np.array([130 / 255, 179 / 255, 102 / 255, 0.6]))
+            axs[i, j].set_xticks([])
+            axs[i, j].set_yticks([])
+            if j == 0:
+                axs[i, j].set_ylabel(f"t = {t}")
+    fig.tight_layout()
+    fig.subplots_adjust(wspace=0, hspace=0)
+    return fig
+
+
+def plot_volume_changes(labels: np.ndarray) -> plt.Figure:
+    """Plot volume changes.
+
+    Args:
+        labels: (x, y, t)
+
+    Returns:
+        figure
+    """
+    n_frames = labels.shape[-1]
+    xs = np.arange(n_frames)
+    rv_volumes = np.sum(labels == 1, axis=(0, 1)) * 10 / 1000
+    myo_volumes = np.sum(labels == 2, axis=(0, 1)) * 10 / 1000
+    lv_volumes = np.sum(labels == 3, axis=(0, 1)) * 10 / 1000
+    lvef = (max(lv_volumes) - min(lv_volumes)) / max(lv_volumes) * 100
+    rvef = (max(rv_volumes) - min(rv_volumes)) / max(rv_volumes) * 100
+
+    fig, ax = plt.subplots(figsize=(4, 4), dpi=120)
+    ax.plot(xs, rv_volumes, color="#6C8EBF", label="RV")
+    ax.plot(xs, myo_volumes, color="#D6B656", label="MYO")
+    ax.plot(xs, lv_volumes, color="#82B366", label="LV")
+    ax.set_xlabel("Frame")
+    ax.set_ylabel("Area (mm2)")
+    ax.set_title(f"LVEF = {lvef:.2f}%, RVEF = {rvef:.2f}%")
+    ax.legend(loc="lower right")
+    fig.tight_layout()
+    return fig
+
+
 def run(trained_dataset: str, seed: int, device: torch.device, dtype: torch.dtype) -> None:
     """Run segmentation on LAX 4C images using fine-tuned checkpoint."""
     # load model
@@ -58,6 +117,7 @@ def run(trained_dataset: str, seed: int, device: torch.device, dtype: torch.dtyp
     # (x, y, 1, t)
     exp_dir = Path(__file__).parent.parent.resolve()
     images = np.transpose(sitk.GetArrayFromImage(sitk.ReadImage(exp_dir / "data/ukb/1/1_lax_4c.nii.gz")))
+
     n_frames = images.shape[-1]
     labels_list = []
     for t in tqdm(range(n_frames), total=n_frames):
@@ -70,42 +130,17 @@ def run(trained_dataset: str, seed: int, device: torch.device, dtype: torch.dtyp
         # the model seems to hallucinate an additional right ventricle and myocardium sometimes
         # find the connected component that is closest to left ventricle
         labels = post_process(labels)
-
         labels_list.append(labels)
     labels = np.stack(labels_list, axis=-1)  # (x, y, t)
 
     # visualise segmentations
-    _, axs = plt.subplots(10, 5, figsize=(5, 10))
-    for i in range(10):
-        for j in range(5):
-            t = i * 5 + j
-            axs[i, j].imshow(images[..., 0, t], cmap="gray")
-            axs[i, j].imshow((labels[..., t, None] == 1) * np.array([108 / 255, 142 / 255, 191 / 255, 0.6]))
-            axs[i, j].imshow((labels[..., t, None] == 2) * np.array([214 / 255, 182 / 255, 86 / 255, 0.6]))
-            axs[i, j].imshow((labels[..., t, None] == 3) * np.array([130 / 255, 179 / 255, 102 / 255, 0.6]))
-            axs[i, j].set_xticks([])
-            axs[i, j].set_yticks([])
-            if j == 0:
-                axs[i, j].set_ylabel(f"t = {t}")
-    plt.subplots_adjust(wspace=0.02, hspace=0.02)
+    fig = plot_segmentations(images, labels)
     plt.savefig(f"segmentation_{view}_mask_{trained_dataset}_{seed}.png", dpi=300, bbox_inches="tight")
     plt.show(block=False)
 
     # visualise area changes
-    rv_areas = np.sum(labels == 1, axis=(0, 1))
-    myo_areas = np.sum(labels == 2, axis=(0, 1))
-    lv_areas = np.sum(labels == 3, axis=(0, 1))
-    lvef = (max(lv_areas) - min(lv_areas)) / max(lv_areas) * 100
-    rvef = (max(rv_areas) - min(rv_areas)) / max(rv_areas) * 100
-    plt.figure(figsize=(4, 3))
-    plt.plot(rv_areas, color="#6C8EBF", label="RV")
-    plt.plot(myo_areas, color="#D6B656", label="MYO")
-    plt.plot(lv_areas, color="#82B366", label="LV")
-    plt.xlabel("Frame")
-    plt.ylabel("Area (mm2)")
-    plt.title(f"LVEF = {lvef:.2f}%, RVEF = {rvef:.2f}%")
-    plt.legend(loc="lower right")
-    plt.savefig(f"segmentation_{view}_mask_area_{trained_dataset}_{seed}.png", dpi=300, bbox_inches="tight")
+    fig = plot_volume_changes(labels)
+    fig.savefig(f"segmentation_{view}_mask_area_{trained_dataset}_{seed}.png", dpi=300, bbox_inches="tight")
     plt.show(block=False)
 
 

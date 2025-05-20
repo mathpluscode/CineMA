@@ -71,40 +71,35 @@ def get_meshgrid(
     return x, y, z
 
 
-def run() -> None:
-    """Visualize SAX and LAX images in 3D space."""
-    # load data
-    t_to_show = 4
-    depth_to_show = 4
-    opacity = 1
-    uid = "1"
-    data_dir = Path(__file__).parent.resolve()
-
-    lax_2c_image = sitk.ReadImage(data_dir / f"data/ukb/{uid}/{uid}_lax_2c.nii.gz")
+def plot_cmr_views(
+    lax_2c_image: sitk.Image,
+    lax_3c_image: sitk.Image,
+    lax_4c_image: sitk.Image,
+    sax_image: sitk.Image,
+    t_to_show: int,
+    depth_to_show: int,
+) -> go.Figure:
+    """Plot SAX and LAX images in 3D space."""
     width_2c, height_2c, _, _ = lax_2c_image.GetSize()
     *pixel_spacing_2c, _, _ = lax_2c_image.GetSpacing()
     origin_2c = np.array(lax_2c_image.GetOrigin())[:3]
     rot_2c = np.array(lax_2c_image.GetDirection()).reshape(4, 4)[:3, :3]
 
-    lax_3c_image = sitk.ReadImage(data_dir / f"data/ukb/{uid}/{uid}_lax_3c.nii.gz")
     width_3c, height_3c, _, _ = lax_3c_image.GetSize()
     *pixel_spacing_3c, _, _ = lax_3c_image.GetSpacing()
     origin_3c = np.array(lax_3c_image.GetOrigin())[:3]
     rot_3c = np.array(lax_3c_image.GetDirection()).reshape(4, 4)[:3, :3]
 
-    lax_4c_image = sitk.ReadImage(data_dir / f"data/ukb/{uid}/{uid}_lax_4c.nii.gz")
     width_4c, height_4c, _, _ = lax_4c_image.GetSize()
     *pixel_spacing_4c, _, _ = lax_4c_image.GetSpacing()
     origin_4c = np.array(lax_4c_image.GetOrigin())[:3]
     rot_4c = np.array(lax_4c_image.GetDirection()).reshape(4, 4)[:3, :3]
 
-    sax_image = sitk.ReadImage(data_dir / f"data/ukb/{uid}/{uid}_sax.nii.gz")
     width_sax, height_sax, depth_sax, _ = sax_image.GetSize()
     *pixel_spacing_sax, slice_spacing_sax, _ = sax_image.GetSpacing()
     origin_sax = np.array(sax_image.GetOrigin()[:3])
     rot_sax = np.array(sax_image.GetDirection()).reshape(4, 4)[:3, :3]
 
-    # visualize
     x_2c = np.array([0, 0, width_2c, width_2c, 0])
     y_2c = np.array([0, height_2c, height_2c, 0, 0])
     coords_2c = image_to_real_space(x_2c, y_2c, x_2c * 0, rot_2c, origin_2c, pixel_spacing_2c, 0)
@@ -156,7 +151,6 @@ def run() -> None:
         cmax=255,
         colorscale="gray",
         showscale=False,
-        opacity=opacity,
     )
     np_image_3c = np.transpose(sitk.GetArrayFromImage(lax_3c_image))[..., 0, t_to_show]  # (width, height)
     x, y, z = get_meshgrid(height_3c, width_3c, 0, rot_3c, origin_3c, pixel_spacing_3c, 0)
@@ -169,7 +163,6 @@ def run() -> None:
         cmax=255,
         colorscale="gray",
         showscale=False,
-        opacity=opacity,
     )
     np_image_4c = np.transpose(sitk.GetArrayFromImage(lax_4c_image))[..., 0, t_to_show]  # (width, height)
     x, y, z = get_meshgrid(height_4c, width_4c, 0, rot_4c, origin_4c, pixel_spacing_4c, 0)
@@ -182,7 +175,6 @@ def run() -> None:
         cmax=255,
         colorscale="gray",
         showscale=False,
-        opacity=opacity,
     )
 
     traces = [
@@ -217,7 +209,6 @@ def run() -> None:
             cmax=255,
             colorscale="gray",
             showscale=False,
-            opacity=opacity,
         )
 
         if d == depth_to_show:
@@ -231,9 +222,6 @@ def run() -> None:
         scene_camera={
             "eye": {"x": -1.5, "y": 0.75, "z": 1.5},
         },
-        autosize=False,
-        width=800,
-        height=800,
         template="none",
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
@@ -258,6 +246,28 @@ def run() -> None:
             "yaxis": {"showticklabels": False, "showgrid": False, "zeroline": False, "title": ""},
             "zaxis": {"showticklabels": False, "showgrid": False, "zeroline": False, "title": ""},
         }
+    )
+    return fig
+
+
+def run() -> None:
+    """Visualize SAX and LAX images in 3D space."""
+    # load data
+    t_to_show = 4
+    depth_to_show = 4
+    uid = "1"
+    data_dir = Path(__file__).parent.resolve()
+
+    lax_2c_image = sitk.ReadImage(data_dir / f"data/ukb/{uid}/{uid}_lax_2c.nii.gz")
+    lax_3c_image = sitk.ReadImage(data_dir / f"data/ukb/{uid}/{uid}_lax_3c.nii.gz")
+    lax_4c_image = sitk.ReadImage(data_dir / f"data/ukb/{uid}/{uid}_lax_4c.nii.gz")
+    sax_image = sitk.ReadImage(data_dir / f"data/ukb/{uid}/{uid}_sax.nii.gz")
+
+    fig = plot_cmr_views(lax_2c_image, lax_3c_image, lax_4c_image, sax_image, t_to_show, depth_to_show)
+    fig.update_layout(
+        autosize=False,
+        width=800,
+        height=800,
     )
     fig.write_image("cine_cmr_sax_lax.png", scale=5)
     iplot(fig)

@@ -36,8 +36,8 @@ def plot_segmentations(images: np.ndarray, labels: np.ndarray, t_step: int) -> p
             if z == 0:
                 axs[t, z].set_ylabel(f"t = {t * t_step}")
     axs[0, n_slices // 2].set_title("SAX Slices")
-    fig.subplots_adjust(wspace=0, hspace=0)
     fig.tight_layout()
+    fig.subplots_adjust(wspace=0, hspace=0)
     return fig
 
 
