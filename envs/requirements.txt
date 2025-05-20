@@ -17,7 +17,7 @@ pytest-cov==6.1.1
 pytest-mock==3.14.0
 pytest==8.3.5
 rich==14.0.0
-ruff==0.11.9
+ruff==0.11.10
 safetensors==0.5.3
 scikit-image==0.25.2
 scikit-learn==1.6.1
