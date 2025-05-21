@@ -158,8 +158,8 @@ def segmentation_eval_myops2020_dataset(  # pylint:disable=too-many-statements
     model = get_segmentation_model(config)
     checkpoint = torch.load(ckpt_path, map_location="cpu", weights_only=False)
     model.load_state_dict(checkpoint["model"])
-    model.to(device)
     model.eval()
+    model.to(device)
 
     # inference
     for _, batch in tqdm(enumerate(dataloader), total=len(dataloader)):  # batch size is 1

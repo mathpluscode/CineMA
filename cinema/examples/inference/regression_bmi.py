@@ -30,6 +30,7 @@ def run(seed: int, device: torch.device, dtype: torch.dtype) -> None:
         model_filename=f"finetuned/regression_bmi/{trained_dataset}_{view}/{trained_dataset}_{view}_{seed}.safetensors",
         config_filename=f"finetuned/regression_bmi/{trained_dataset}_{view}/config.yaml",
     )
+    model.eval()
     model.to(device)
 
     # load sample data

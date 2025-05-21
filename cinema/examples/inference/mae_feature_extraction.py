@@ -14,8 +14,8 @@ def run(device: torch.device, dtype: torch.dtype) -> None:
     """Run MAE feature extraction."""
     # load model
     model = CineMA.from_pretrained()
-    model.to(device)
     model.eval()
+    model.to(device)
 
     # load sample data and form a batch of size 1
     transform = Compose(

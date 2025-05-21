@@ -232,8 +232,8 @@ def segmentation_eval_rescan_dataset(
     checkpoint = torch.load(ckpt_path, map_location="cpu", weights_only=False)
     state_dict = checkpoint["model"]
     model.load_state_dict(state_dict)
-    model.to(device)
     model.eval()
+    model.to(device)
 
     # inference
     metrics_list = []

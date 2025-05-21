@@ -29,6 +29,7 @@ def run(trained_dataset: str, view: str, seed: int, device: torch.device, dtype:
         model_filename=f"finetuned/regression_ef/{trained_dataset}_{view}/{trained_dataset}_{view}_{seed}.safetensors",
         config_filename=f"finetuned/regression_ef/{trained_dataset}_{view}/config.yaml",
     )
+    model.eval()
     model.to(device)
 
     # load sample data

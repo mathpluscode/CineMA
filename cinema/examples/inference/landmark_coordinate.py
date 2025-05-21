@@ -20,6 +20,7 @@ def run(view: str, seed: int, device: torch.device, dtype: torch.dtype) -> None:
         model_filename=f"finetuned/landmark_coordinate/{view}/{view}_{seed}.safetensors",
         config_filename=f"finetuned/landmark_coordinate/{view}/config.yaml",
     )
+    model.eval()
     model.to(device)
 
     # load sample data and form a batch of size 1

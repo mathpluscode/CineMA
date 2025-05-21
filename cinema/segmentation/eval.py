@@ -192,8 +192,8 @@ def segmentation_eval_edes_dataset(
     model = get_segmentation_model(config)
     checkpoint = torch.load(ckpt_path, map_location="cpu", weights_only=False)
     model.load_state_dict(checkpoint["model"])
-    model.to(device)
     model.eval()
+    model.to(device)
 
     # inference
     metrics_list = []  # each element is a dict, corresponding to one sample

@@ -83,6 +83,7 @@ def run(trained_dataset: str, seed: int, device: torch.device, dtype: torch.dtyp
         model_filename=f"finetuned/segmentation/{trained_dataset}_{view}/{trained_dataset}_{view}_{seed}.safetensors",
         config_filename=f"finetuned/segmentation/{trained_dataset}_{view}/config.yaml",  # same config for all models
     )
+    model.eval()
     model.to(device)
 
     # load sample data and form a batch of size 1

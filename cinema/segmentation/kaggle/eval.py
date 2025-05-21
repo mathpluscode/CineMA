@@ -161,8 +161,8 @@ def segmentation_eval_kaggle_dataset(  # pylint:disable=too-many-statements
     checkpoint = torch.load(ckpt_path, map_location="cpu", weights_only=False)
     state_dict = checkpoint["model"]
     model.load_state_dict(state_dict)
-    model.to(device)
     model.eval()
+    model.to(device)
 
     # inference
     lv_metrics_list = []

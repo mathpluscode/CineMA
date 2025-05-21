@@ -115,8 +115,8 @@ def landmark_detection_eval_dataset(  # pylint:disable=too-many-statements
     model = get_segmentation_model(config)
     checkpoint = torch.load(ckpt_path, map_location="cpu", weights_only=False)
     model.load_state_dict(checkpoint["model"])
-    model.to(device)
     model.eval()
+    model.to(device)
 
     # inference
     patch_size_dict = {view: config.data.lax.patch_size}
