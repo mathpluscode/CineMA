@@ -12,6 +12,110 @@ from tqdm import tqdm
 from cinema import ConvUNetR, heatmap_soft_argmax
 
 
+def plot_heatmaps(images: np.ndarray, probs: np.ndarray, n_cols: int = 5) -> plt.Figure:
+    """Plot heatmaps.
+
+    Args:
+        images: (x, y, t)
+        probs: (3, x, y, t)
+        n_cols: number of columns
+
+    Returns:
+        figure
+    """
+    n_frames = probs.shape[-1]
+    n_rows = n_frames // n_cols
+    fig, axs = plt.subplots(n_rows, n_cols, figsize=(n_cols, n_rows), dpi=300)
+    for i in range(n_rows):
+        for j in range(n_cols):
+            t = i * n_cols + j
+            axs[i, j].imshow(images[..., 0, t], cmap="gray")
+            axs[i, j].imshow(probs[0, ..., t, None] * np.array([1.0, 0.0, 0.0, 1.0]))
+            axs[i, j].imshow(probs[1, ..., t, None] * np.array([1.0, 0.0, 0.0, 1.0]))
+            axs[i, j].imshow(probs[2, ..., t, None] * np.array([1.0, 0.0, 0.0, 1.0]))
+            axs[i, j].set_xticks([])
+            axs[i, j].set_yticks([])
+            if j == 0:
+                axs[i, j].set_ylabel(f"t = {t}")
+    fig.tight_layout()
+    fig.subplots_adjust(wspace=0, hspace=0)
+    return fig
+
+
+def plot_landmarks(images: np.ndarray, coords: np.ndarray, n_cols: int = 5) -> plt.Figure:
+    """Plot landmarks.
+
+    Args:
+        images: (x, y, t)
+        coords: (6, t)
+        n_cols: number of columns
+
+    Returns:
+        figure
+    """
+    n_frames = images.shape[-1]
+    n_rows = n_frames // n_cols
+    fig, axs = plt.subplots(n_rows, n_cols, figsize=(n_cols, n_rows), dpi=300)
+    for i in range(n_rows):
+        for j in range(n_cols):
+            t = i * n_cols + j
+
+            # draw predictions with cross
+            preds = images[..., t] * np.array([1, 1, 1])[None, None, :]
+            preds = preds.clip(0, 255).astype(np.uint8)
+            for k in range(3):
+                pred_x, pred_y = coords[2 * k, t], coords[2 * k + 1, t]
+                x1, x2 = max(0, pred_x - 9), min(preds.shape[0], pred_x + 10)
+                y1, y2 = max(0, pred_y - 9), min(preds.shape[1], pred_y + 10)
+                preds[pred_x, y1:y2] = [255, 0, 0]
+                preds[x1:x2, pred_y] = [255, 0, 0]
+
+            axs[i, j].imshow(preds)
+            axs[i, j].set_xticks([])
+            axs[i, j].set_yticks([])
+            if j == 0:
+                axs[i, j].set_ylabel(f"t = {t}")
+    fig.tight_layout()
+    fig.subplots_adjust(wspace=0, hspace=0)
+    return fig
+
+
+def plot_lv(coords: np.ndarray) -> plt.Figure:
+    """Plot GL shortening.
+
+    Args:
+        coords: (6, t)
+
+    Returns:
+        figure
+    """
+    # GL shortening
+    x1, y1 = coords[0], coords[1]
+    x2, y2 = coords[2], coords[3]
+    x3, y3 = coords[4], coords[5]
+    lv_lengths = (((x1 + x2) / 2 - x3) ** 2 + ((y1 + y2) / 2 - y3) ** 2) ** 0.5
+    gls = (max(lv_lengths) - min(lv_lengths)) / max(lv_lengths) * 100
+
+    # MAPSE
+    ed_idx = np.argmin(lv_lengths)
+    es_idx = np.argmax(lv_lengths)
+    x1_ed, y1_ed = coords[0, ed_idx], coords[1, ed_idx]
+    x2_ed, y2_ed = coords[2, ed_idx], coords[3, ed_idx]
+    x1_es, y1_es = coords[0, es_idx], coords[1, es_idx]
+    x2_es, y2_es = coords[2, es_idx], coords[3, es_idx]
+    mapse = (
+        ((x1_ed - x1_es) ** 2 + (y1_ed - y1_es) ** 2) ** 0.5 + ((x2_ed - x2_es) ** 2 + (y2_ed - y2_es) ** 2) ** 0.5
+    ) / 2
+
+    fig = plt.figure(figsize=(4, 4), dpi=120)
+    plt.plot(lv_lengths, color="#82B366", label="LV")
+    plt.xlabel("Frame")
+    plt.ylabel("Length (mm)")
+    plt.title(f"GLS = {gls:.2f}%, MAPSE = {mapse:.2f} mm")
+    plt.legend(loc="lower right")
+    return fig
+
+
 def run(view: str, seed: int, device: torch.device, dtype: torch.dtype) -> None:
     """Run landmark localization on LAX images using fine-tuned checkpoint."""
     # load model
@@ -31,8 +135,7 @@ def run(view: str, seed: int, device: torch.device, dtype: torch.dtype) -> None:
     images = np.transpose(sitk.GetArrayFromImage(sitk.ReadImage(exp_dir / f"data/ukb/1/1_{view}.nii.gz")))
     n_frames = images.shape[-1]
     probs_list = []
-    preds_list = []
-    lv_lengths = []
+    coords_list = []
     for t in tqdm(range(n_frames), total=n_frames):
         batch = transform({view: torch.from_numpy(images[None, ..., 0, t])})
         batch = {k: v[None, ...].to(device=device, dtype=dtype) for k, v in batch.items()}
@@ -42,68 +145,23 @@ def run(view: str, seed: int, device: torch.device, dtype: torch.dtype) -> None:
         probs_list.append(probs[0].detach().to(torch.float32).cpu().numpy())
         coords = heatmap_soft_argmax(probs)[0].numpy()
         coords = [int(x) for x in coords]
-
-        # draw predictions with cross
-        preds = images[..., t] * np.array([1, 1, 1])[None, None, :]
-        preds = preds.clip(0, 255).astype(np.uint8)
-        for i in range(3):
-            pred_x, pred_y = coords[2 * i], coords[2 * i + 1]
-            x1, x2 = max(0, pred_x - 9), min(preds.shape[0], pred_x + 10)
-            y1, y2 = max(0, pred_y - 9), min(preds.shape[1], pred_y + 10)
-            preds[pred_x, y1:y2] = [255, 0, 0]
-            preds[x1:x2, pred_y] = [255, 0, 0]
-        preds_list.append(preds)
-
-        # record LV length
-        x1, y1, x2, y2, x3, y3 = coords
-        lv_len = (((x1 + x2) / 2 - x3) ** 2 + ((y1 + y2) / 2 - y3) ** 2) ** 0.5
-        lv_lengths.append(lv_len)
+        coords_list.append(coords)
     probs = np.stack(probs_list, axis=-1)  # (3, x, y, t)
-    preds = np.stack(preds_list, axis=-1)  # (3, x, y, t)
+    coords = np.stack(coords_list, axis=-1)  # (6, t)
 
     # visualise heatmaps
-    _, axs = plt.subplots(10, 5, figsize=(10, 20))
-    for i in range(10):
-        for j in range(5):
-            t = i * 5 + j
-            axs[i, j].imshow(images[..., 0, t], cmap="gray")
-            axs[i, j].imshow((probs[0, ..., t, None]) * np.array([108 / 255, 142 / 255, 191 / 255, 1.0]))
-            axs[i, j].imshow((probs[1, ..., t, None]) * np.array([214 / 255, 182 / 255, 86 / 255, 1.0]))
-            axs[i, j].imshow((probs[2, ..., t, None]) * np.array([130 / 255, 179 / 255, 102 / 255, 1.0]))
-            axs[i, j].set_xticks([])
-            axs[i, j].set_yticks([])
-            if j == 0:
-                axs[i, j].set_ylabel(f"t = {t}")
-    plt.subplots_adjust(wspace=0.02, hspace=0.02)
-    plt.savefig(f"landmark_heatmap_{view}_{seed}.png", dpi=300, bbox_inches="tight")
+    fig = plot_heatmaps(images, probs)
+    fig.savefig(f"landmark_heatmap_probs_{view}_{seed}.png", dpi=300, bbox_inches="tight")
     plt.show(block=False)
 
     # visualise landmarks
-    _, axs = plt.subplots(10, 5, figsize=(10, 20))
-    for i in range(10):
-        for j in range(5):
-            t = i * 5 + j
-            axs[i, j].imshow(preds[..., t])
-            axs[i, j].set_xticks([])
-            axs[i, j].set_yticks([])
-            if j == 0:
-                axs[i, j].set_ylabel(f"t = {t}")
-    plt.subplots_adjust(wspace=0.02, hspace=0.02)
-    plt.savefig(f"landmark_heatmap_landmark_{view}_{seed}.png", dpi=300, bbox_inches="tight")
+    fig = plot_landmarks(images, coords)
+    fig.savefig(f"landmark_heatmap_landmark_{view}_{seed}.png", dpi=300, bbox_inches="tight")
     plt.show(block=False)
 
     # visualise LV length changes
-    plt.figure(figsize=(4, 3))
-    if view == "lax_2c":
-        # first frame is empty for this particular example
-        lv_lengths = lv_lengths[1:]
-    lvef = (max(lv_lengths) - min(lv_lengths)) / max(lv_lengths) * 100
-    plt.plot(lv_lengths, color="#82B366", label="LV")
-    plt.xlabel("Frame")
-    plt.ylabel("Length (mm)")
-    plt.title(f"LVEF = {lvef:.2f}%")
-    plt.legend(loc="lower right")
-    plt.savefig(f"landmark_heatmap_lv_length_{view}_{seed}.png", dpi=300, bbox_inches="tight")
+    fig = plot_lv(coords)
+    plt.savefig(f"landmark_heatmap_gls_{view}_{seed}.png", dpi=300, bbox_inches="tight")
     plt.show(block=False)
 
 
