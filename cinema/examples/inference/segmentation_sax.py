@@ -107,7 +107,7 @@ def run(trained_dataset: str, seed: int, device: torch.device, dtype: torch.dtyp
         with torch.no_grad(), torch.autocast("cuda", dtype=dtype, enabled=torch.cuda.is_available()):
             logits = model(batch)[view]  # (1, 4, x, y, z)
         labels_list.append(torch.argmax(logits, dim=1)[0, ..., :n_slices])
-    labels = torch.stack(labels_list, dim=-1).detach().cpu().numpy()  # (x, y, z, t)
+    labels = torch.stack(labels_list, dim=-1).detach().to(torch.float32).cpu().numpy()  # (x, y, z, t)
 
     # visualise segmentations
     fig = plot_segmentations(images, labels, t_step)

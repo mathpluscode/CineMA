@@ -39,7 +39,7 @@ def run(view: str, seed: int, device: torch.device, dtype: torch.dtype) -> None:
         with torch.no_grad(), torch.autocast("cuda", dtype=dtype, enabled=torch.cuda.is_available()):
             logits = model(batch)[view]  # (1, 3, x, y)
         probs = torch.sigmoid(logits)  # (1, 3, width, height)
-        probs_list.append(probs[0].detach().cpu().numpy())
+        probs_list.append(probs[0].detach().to(torch.float32).cpu().numpy())
         coords = heatmap_soft_argmax(probs)[0].numpy()
         coords = [int(x) for x in coords]
 

@@ -105,7 +105,7 @@ def test_segmentation_eval_metrics(
 
     metrics = segmentation_metrics(logits, labels, spacing)
     for v in metrics.values():
-        assert not np.any(np.isnan(v.detach().cpu().numpy()))
+        assert not np.any(np.isnan(v.detach().to(torch.float32).cpu().numpy()))
         assert v.shape == (batch,)
 
     # ensure inputs are not modified

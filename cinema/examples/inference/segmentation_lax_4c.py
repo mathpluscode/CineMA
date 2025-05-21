@@ -126,7 +126,7 @@ def run(trained_dataset: str, seed: int, device: torch.device, dtype: torch.dtyp
         batch = {k: v[None, ...].to(device=device, dtype=dtype) for k, v in batch.items()}
         with torch.no_grad(), torch.autocast("cuda", dtype=dtype, enabled=torch.cuda.is_available()):
             logits = model(batch)[view]  # (1, 4, x, y)
-        labels = torch.argmax(logits, dim=1)[0].detach().cpu().numpy()  # (x, y)
+        labels = torch.argmax(logits, dim=1)[0].detach().to(torch.float32).cpu().numpy()  # (x, y)
 
         # the model seems to hallucinate an additional right ventricle and myocardium sometimes
         # find the connected component that is closest to left ventricle

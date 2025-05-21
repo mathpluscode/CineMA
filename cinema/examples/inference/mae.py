@@ -77,8 +77,8 @@ def reconstruct_images(
             patch_size=patch_size_dict[view],
             grid_size=grid_size_dict[view],
         )
-        reconstructed_dict[view] = reconstructed.detach().cpu().numpy()[0, 0]
-        masks_dict[view] = masks.detach().cpu().numpy()[0, 0]
+        reconstructed_dict[view] = reconstructed.detach().to(torch.float32).cpu().numpy()[0, 0]
+        masks_dict[view] = masks.detach().to(torch.float32).cpu().numpy()[0, 0]
     reconstructed_dict["sax"] = reconstructed_dict["sax"][..., :sax_slices]
     masks_dict["sax"] = masks_dict["sax"][..., :sax_slices]
     return reconstructed_dict, masks_dict
@@ -115,12 +115,12 @@ def run(device: torch.device, dtype: torch.dtype) -> None:
     lax_4c_image = np.transpose(sitk.GetArrayFromImage(sitk.ReadImage(exp_dir / "data/ukb/1/1_lax_4c.nii.gz")))
 
     image_dict = {
-        "sax": sax_image[..., t],
-        "lax_2c": lax_2c_image[..., 0, t],
-        "lax_3c": lax_3c_image[..., 0, t],
-        "lax_4c": lax_4c_image[..., 0, t],
+        "sax": sax_image[None, ..., t],
+        "lax_2c": lax_2c_image[None, ..., 0, t],
+        "lax_3c": lax_3c_image[None, ..., 0, t],
+        "lax_4c": lax_4c_image[None, ..., 0, t],
     }
-    batch = {k: torch.from_numpy(v[None, ...]) for k, v in image_dict.items()}
+    batch = {k: torch.from_numpy(v) for k, v in image_dict.items()}
 
     # forward
     sax_slices = batch["sax"].shape[-1]
@@ -137,10 +137,12 @@ def run(device: torch.device, dtype: torch.dtype) -> None:
             grid_size_dict,
             sax_slices,
         )
+        batch = {k: v.detach().to(torch.float32).cpu().numpy()[0, 0] for k, v in batch.items()}
+        batch["sax"] = batch["sax"][..., :sax_slices]
 
     # visualize
     fig = plot_mae_reconstruction(
-        image_dict,
+        batch,
         reconstructed_dict,
         masks_dict,
     )
