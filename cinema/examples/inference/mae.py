@@ -62,7 +62,7 @@ def run(device: torch.device, dtype: torch.dtype) -> None:
         _, pred_dict, enc_mask_dict, _ = model(batch, enc_mask_ratio=0.75)
 
     # visualize
-    f, axs = plt.subplots(6, 4, figsize=(12, 18))
+    _, axs = plt.subplots(6, 4, figsize=(12, 18))
     for i, view in enumerate(["lax_2c", "lax_3c", "lax_4c", "sax"]):
         patches = patchify(image=batch[view], patch_size=model.dec_patch_size_dict[view])
         patches[enc_mask_dict[view]] = pred_dict[view]

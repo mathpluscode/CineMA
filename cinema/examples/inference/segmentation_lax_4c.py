@@ -54,7 +54,7 @@ def plot_segmentations(images: np.ndarray, labels: np.ndarray, n_cols: int = 5) 
     """
     n_frames = labels.shape[-1]
     n_rows = n_frames // n_cols
-    fig, axs = plt.subplots(n_rows, n_cols, figsize=(n_cols, n_rows))
+    fig, axs = plt.subplots(n_rows, n_cols, figsize=(n_cols, n_rows), dpi=300)
     for i in range(n_rows):
         for j in range(n_cols):
             t = i * n_cols + j

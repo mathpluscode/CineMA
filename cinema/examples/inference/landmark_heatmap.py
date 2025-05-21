@@ -114,5 +114,5 @@ if __name__ == "__main__":
             dtype = torch.bfloat16
 
     for view in ["lax_2c", "lax_4c"]:
-        for seed in range(3):
-            run(view, seed, device, dtype)
+        for seed_idx in range(3):
+            run(view, seed_idx, device, dtype)

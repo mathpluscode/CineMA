@@ -58,6 +58,7 @@ disable=arguments-renamed,
         logging-fstring-interpolation,
         no-member,
         not-callable,
+        redefined-outer-name,
         too-few-public-methods,
         too-many-arguments,
         too-many-branches,
@@ -181,7 +182,7 @@ generated-members=
 [FORMAT]
 
 # Maximum number of characters on a single line.
-max-line-length=120
+max-line-length=150
 
 # Regexp for a line that is allowed to be longer than the limit.
 ignore-long-lines=(?x)(
