@@ -25,12 +25,22 @@ on multiple datasets, including [ACDC](https://www.creatis.insa-lyon.fr/Challeng
 [Rescan](https://www.ahajournals.org/doi/full/10.1161/CIRCIMAGING.119.009214), and
 [Landmark](https://pubs.rsna.org/doi/10.1148/ryai.2021200197), etc.
 
+Check the [demos](https://huggingface.co/spaces/mathpluscode/CineMA) on Hugging Face to see example inferences!
+
 ## Usage
 
 ### Installation
 
 You can install the package inside a [Conda](https://github.com/conda-forge/miniforge) environment using following
 commands
+
+You can install with `pip` directly (dependencies are not installed)
+
+```bash
+pip install git+https://github.com/mathpluscode/CineMA
+```
+
+or you can download the source code to install (dependencies except Pytorch are installed)
 
 ```bash
 git clone https://github.com/mathpluscode/CineMA.git
@@ -44,8 +54,8 @@ pip install -e .
 
 ### Use fine-tuned models
 
-The fine-tuned models have been released at https://huggingface.co/mathpluscode/CineMA. Example inference scripts are
-available to test these models.
+The fine-tuned models have been released at [HuggingFace](https://huggingface.co/mathpluscode/CineMA). Example inference
+scripts are available to test these models.
 
 ```bash
 python examples/inference/segmentation_sax.py
