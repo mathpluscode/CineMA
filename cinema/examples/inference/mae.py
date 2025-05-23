@@ -22,27 +22,27 @@ def plot_mae_reconstruction(
     n_cols = 4
     fig, axs = plt.subplots(n_rows, n_cols, figsize=(n_cols * 2, n_rows * 2), dpi=300)
     for i, view in enumerate(["lax_2c", "lax_3c", "lax_4c", "sax"]):
-        masks = masks_dict[view]
         reconstructed = reconstructed_dict[view]
         image = image_dict[view]
+        masked = (1 - masks_dict[view]) * image
         error = np.abs(reconstructed - image)
 
         if view == "sax":
             for j in range(sax_slices):
                 axs[3 + j, 0].set_ylabel(f"SAX slice {j}")
                 axs[3 + j, 0].imshow(image[..., j], cmap="gray")
-                axs[3 + j, 1].imshow(masks[..., j], cmap="gray")
+                axs[3 + j, 1].imshow(masked[..., j], cmap="gray")
                 axs[3 + j, 2].imshow(reconstructed[..., j], cmap="gray")
                 axs[3 + j, 3].imshow(error[..., j], cmap="gray")
         else:
             axs[i, 0].imshow(image, cmap="gray")
-            axs[i, 1].imshow(masks, cmap="gray")
+            axs[i, 1].imshow(masked, cmap="gray")
             axs[i, 2].imshow(reconstructed, cmap="gray")
             axs[i, 3].imshow(error, cmap="gray")
             axs[i, 0].set_ylabel({"lax_2c": "LAX 2C", "lax_3c": "LAX 3C", "lax_4c": "LAX 4C"}[view])
             if i == 0:
                 axs[i, 0].set_title("Original")
-                axs[i, 1].set_title("Mask")
+                axs[i, 1].set_title("Masked")
                 axs[i, 2].set_title("Reconstructed")
                 axs[i, 3].set_title("Error")
     # remove the x and y ticks
