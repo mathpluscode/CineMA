@@ -42,8 +42,10 @@ def draw_landmarks(image: np.ndarray, metrics: dict[str, float], landmarks: list
         # draw predictions with blue cross
         pred_x, pred_y = metrics[f"pred_x{i}"], metrics[f"pred_y{i}"]
         pred_x, pred_y = int(pred_x), int(pred_y)
-        x1, x2 = max(0, pred_x - 7), min(image.shape[0], pred_x + 8)
-        y1, y2 = max(0, pred_y - 7), min(image.shape[1], pred_y + 8)
+        pred_x = min(max(0, pred_x), image.shape[0] - 1)
+        pred_y = min(max(0, pred_y), image.shape[1] - 1)
+        x1, x2 = max(0, pred_x - 7), min(image.shape[0] - 1, pred_x + 8)
+        y1, y2 = max(0, pred_y - 7), min(image.shape[1] - 1, pred_y + 8)
         if pred_y < 0 or pred_y >= image.shape[1] or pred_x < 0 or pred_x >= image.shape[0]:
             logger.error(f"Predicted landmark {i} out of bounds: ({pred_x}, {pred_y}), for image shape {image.shape}.")
 
@@ -52,8 +54,8 @@ def draw_landmarks(image: np.ndarray, metrics: dict[str, float], landmarks: list
         # draw ground truth with red cross, slightly smaller to not overlap with pred
         true_x, true_y = metrics[f"true_x{i}"], metrics[f"true_y{i}"]
         true_x, true_y = int(true_x), int(true_y)
-        x1, x2 = max(0, true_x - 5), min(image.shape[0], true_x + 6)
-        y1, y2 = max(0, true_y - 5), min(image.shape[1], true_y + 6)
+        x1, x2 = max(0, true_x - 5), min(image.shape[0] - 1, true_x + 6)
+        y1, y2 = max(0, true_y - 5), min(image.shape[1] - 1, true_y + 6)
         image[true_x, y1:y2] = [255, 0, 0]
         image[x1:x2, true_y] = [255, 0, 0]
     out_path.parent.mkdir(exist_ok=True, parents=True)
