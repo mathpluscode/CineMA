@@ -15,8 +15,16 @@ def plot_mae_reconstruction(
     image_dict: dict[str, torch.Tensor],
     reconstructed_dict: dict[str, torch.Tensor],
     masks_dict: dict[str, torch.Tensor],
-) -> plt.Figure:
-    """Plot MAE reconstruction."""
+    filepath: Path,
+) -> None:
+    """Plot MAE reconstruction.
+
+    Args:
+        image_dict: Dictionary of original images
+        reconstructed_dict: Dictionary of reconstructed images
+        masks_dict: Dictionary of masks
+        filepath: path to save the PNG file.
+    """
     sax_slices = image_dict["sax"].shape[-1]
     n_rows = sax_slices + 3
     n_cols = 4
@@ -52,7 +60,8 @@ def plot_mae_reconstruction(
             axs[i, j].set_yticks([])
     fig.tight_layout()
     fig.subplots_adjust(wspace=0, hspace=0)
-    return fig
+    fig.savefig(filepath, dpi=300, bbox_inches="tight")
+    plt.close(fig)
 
 
 def reconstruct_images(
@@ -141,12 +150,12 @@ def run(device: torch.device, dtype: torch.dtype) -> None:
         batch["sax"] = batch["sax"][..., :sax_slices]
 
     # visualize
-    fig = plot_mae_reconstruction(
+    plot_mae_reconstruction(
         batch,
         reconstructed_dict,
         masks_dict,
+        Path("mae_reconstruction.png"),
     )
-    fig.savefig("mae_reconstruction.png", dpi=300, bbox_inches="tight")
     plt.show(block=False)
 
 

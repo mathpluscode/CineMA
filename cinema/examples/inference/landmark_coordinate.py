@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 import SimpleITK as sitk  # noqa: N813
 import torch
@@ -43,14 +42,10 @@ def run(view: str, seed: int, device: torch.device, dtype: torch.dtype) -> None:
     coords = np.stack(coords_list, axis=-1)  # (6, t)
 
     # visualise landmarks
-    fig = plot_landmarks(images, coords)
-    fig.savefig(f"landmark_coordinate_landmark_{view}_{seed}.png", dpi=300, bbox_inches="tight")
-    plt.show(block=False)
+    plot_landmarks(images, coords, Path(f"landmark_coordinate_landmark_{view}_{seed}.gif"))
 
     # visualise LV length changes
-    fig = plot_lv(coords)
-    plt.savefig(f"landmark_coordinate_gls_{view}_{seed}.png", dpi=300, bbox_inches="tight")
-    plt.show(block=False)
+    plot_lv(coords, Path(f"landmark_coordinate_gls_{view}_{seed}.png"))
 
 
 if __name__ == "__main__":

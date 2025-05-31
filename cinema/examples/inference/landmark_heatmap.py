@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import imageio
 import matplotlib.pyplot as plt
 import numpy as np
 import SimpleITK as sitk  # noqa: N813
@@ -12,82 +13,98 @@ from tqdm import tqdm
 from cinema import ConvUNetR, heatmap_soft_argmax
 
 
-def plot_heatmaps(images: np.ndarray, probs: np.ndarray, n_cols: int = 5) -> plt.Figure:
-    """Plot heatmaps.
+def plot_heatmaps(images: np.ndarray, probs: np.ndarray, filepath: Path) -> None:
+    """Plot heatmaps as animated GIF.
 
     Args:
-        images: (x, y, t)
+        images: (x, y, 1, t)
         probs: (3, x, y, t)
-        n_cols: number of columns
-
-    Returns:
-        figure
+        filepath: path to save the GIF file.
     """
     n_frames = probs.shape[-1]
-    n_rows = n_frames // n_cols
-    fig, axs = plt.subplots(n_rows, n_cols, figsize=(n_cols, n_rows), dpi=300)
-    for i in range(n_rows):
-        for j in range(n_cols):
-            t = i * n_cols + j
-            axs[i, j].imshow(images[..., 0, t], cmap="gray")
-            axs[i, j].imshow(probs[0, ..., t, None] * np.array([1.0, 0.0, 0.0, 1.0]))
-            axs[i, j].imshow(probs[1, ..., t, None] * np.array([1.0, 0.0, 0.0, 1.0]))
-            axs[i, j].imshow(probs[2, ..., t, None] * np.array([1.0, 0.0, 0.0, 1.0]))
-            axs[i, j].set_xticks([])
-            axs[i, j].set_yticks([])
-            if j == 0:
-                axs[i, j].set_ylabel(f"t = {t}")
-    fig.tight_layout()
-    fig.subplots_adjust(wspace=0, hspace=0)
-    return fig
+    temp_frame_paths = []
+
+    for t in tqdm(range(n_frames), desc="Creating heatmap GIF frames"):
+        # Create individual frame
+        fig, ax = plt.subplots(figsize=(5, 5), dpi=300)
+
+        # Plot image
+        ax.imshow(images[..., 0, t], cmap="gray")
+
+        # Plot heatmap overlays
+        ax.imshow(probs[0, ..., t, None] * np.array([1.0, 0.0, 0.0, 1.0]))
+        ax.imshow(probs[1, ..., t, None] * np.array([1.0, 0.0, 0.0, 1.0]))
+        ax.imshow(probs[2, ..., t, None] * np.array([1.0, 0.0, 0.0, 1.0]))
+
+        # Remove axes
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+        # Save frame
+        frame_path = f"_tmp_heatmap_frame_{t:03d}.png"
+        plt.savefig(frame_path, bbox_inches="tight", pad_inches=0, dpi=300)
+        plt.close(fig)
+        temp_frame_paths.append(frame_path)
+
+    # Create GIF
+    with imageio.get_writer(filepath, mode="I", duration=100, loop=0) as writer:
+        for frame_path in tqdm(temp_frame_paths, desc="Creating heatmap GIF"):
+            image = imageio.v2.imread(frame_path)
+            writer.append_data(image)
+            # Clean up temporary file
+            Path(frame_path).unlink()
 
 
-def plot_landmarks(images: np.ndarray, coords: np.ndarray, n_cols: int = 5) -> plt.Figure:
-    """Plot landmarks.
+def plot_landmarks(images: np.ndarray, coords: np.ndarray, filepath: Path) -> None:
+    """Plot landmarks as animated GIF.
 
     Args:
-        images: (x, y, t)
+        images: (x, y, 1, t)
         coords: (6, t)
-        n_cols: number of columns
-
-    Returns:
-        figure
+        filepath: path to save the GIF file.
     """
     n_frames = images.shape[-1]
-    n_rows = n_frames // n_cols
-    fig, axs = plt.subplots(n_rows, n_cols, figsize=(n_cols, n_rows), dpi=300)
-    for i in range(n_rows):
-        for j in range(n_cols):
-            t = i * n_cols + j
+    temp_frame_paths = []
 
-            # draw predictions with cross
-            preds = images[..., t] * np.array([1, 1, 1])[None, None, :]
-            preds = preds.clip(0, 255).astype(np.uint8)
-            for k in range(3):
-                pred_x, pred_y = coords[2 * k, t], coords[2 * k + 1, t]
-                x1, x2 = max(0, pred_x - 9), min(preds.shape[0], pred_x + 10)
-                y1, y2 = max(0, pred_y - 9), min(preds.shape[1], pred_y + 10)
-                preds[pred_x, y1:y2] = [255, 0, 0]
-                preds[x1:x2, pred_y] = [255, 0, 0]
+    for t in tqdm(range(n_frames), desc="Creating landmark GIF frames"):
+        # Create individual frame
+        fig, ax = plt.subplots(figsize=(5, 5), dpi=300)
 
-            axs[i, j].imshow(preds)
-            axs[i, j].set_xticks([])
-            axs[i, j].set_yticks([])
-            if j == 0:
-                axs[i, j].set_ylabel(f"t = {t}")
-    fig.tight_layout()
-    fig.subplots_adjust(wspace=0, hspace=0)
-    return fig
+        # draw predictions with cross
+        preds = images[..., t] * np.array([1, 1, 1])[None, None, :]
+        preds = preds.clip(0, 255).astype(np.uint8)
+        for k in range(3):
+            pred_x, pred_y = coords[2 * k, t], coords[2 * k + 1, t]
+            x1, x2 = max(0, pred_x - 9), min(preds.shape[0], pred_x + 10)
+            y1, y2 = max(0, pred_y - 9), min(preds.shape[1], pred_y + 10)
+            preds[pred_x, y1:y2] = [255, 0, 0]
+            preds[x1:x2, pred_y] = [255, 0, 0]
+
+        ax.imshow(preds)
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+        # Save frame
+        frame_path = f"_tmp_landmark_frame_{t:03d}.png"
+        plt.savefig(frame_path, bbox_inches="tight", pad_inches=0, dpi=300)
+        plt.close(fig)
+        temp_frame_paths.append(frame_path)
+
+    # Create GIF
+    with imageio.get_writer(filepath, mode="I", duration=100, loop=0) as writer:
+        for frame_path in tqdm(temp_frame_paths, desc="Creating landmark GIF"):
+            image = imageio.v2.imread(frame_path)
+            writer.append_data(image)
+            # Clean up temporary file
+            Path(frame_path).unlink()
 
 
-def plot_lv(coords: np.ndarray) -> plt.Figure:
+def plot_lv(coords: np.ndarray, filepath: Path) -> None:
     """Plot GL shortening.
 
     Args:
         coords: (6, t)
-
-    Returns:
-        figure
+        filepath: path to save the PNG file.
     """
     # GL shortening
     x1, y1 = coords[0], coords[1]
@@ -108,12 +125,13 @@ def plot_lv(coords: np.ndarray) -> plt.Figure:
     ) / 2
 
     fig = plt.figure(figsize=(4, 4), dpi=120)
-    plt.plot(lv_lengths, color="#82B366", label="LV")
+    plt.plot(lv_lengths, color="#82B366", label="Left Ventricle")
     plt.xlabel("Frame")
     plt.ylabel("Length (mm)")
-    plt.title(f"GLS = {gls:.2f}%, MAPSE = {mapse:.2f} mm")
+    plt.title(f"GLS = {gls:.2f}%\nMAPSE = {mapse:.2f} mm")
     plt.legend(loc="lower right")
-    return fig
+    fig.savefig(filepath, dpi=300, bbox_inches="tight")
+    plt.close(fig)
 
 
 def run(view: str, seed: int, device: torch.device, dtype: torch.dtype) -> None:
@@ -150,19 +168,13 @@ def run(view: str, seed: int, device: torch.device, dtype: torch.dtype) -> None:
     coords = np.stack(coords_list, axis=-1)  # (6, t)
 
     # visualise heatmaps
-    fig = plot_heatmaps(images, probs)
-    fig.savefig(f"landmark_heatmap_probs_{view}_{seed}.png", dpi=300, bbox_inches="tight")
-    plt.show(block=False)
+    plot_heatmaps(images, probs, Path(f"landmark_heatmap_probs_{view}_{seed}.gif"))
 
     # visualise landmarks
-    fig = plot_landmarks(images, coords)
-    fig.savefig(f"landmark_heatmap_landmark_{view}_{seed}.png", dpi=300, bbox_inches="tight")
-    plt.show(block=False)
+    plot_landmarks(images, coords, Path(f"landmark_heatmap_landmark_{view}_{seed}.gif"))
 
     # visualise LV length changes
-    fig = plot_lv(coords)
-    plt.savefig(f"landmark_heatmap_gls_{view}_{seed}.png", dpi=300, bbox_inches="tight")
-    plt.show(block=False)
+    plot_lv(coords, Path(f"landmark_heatmap_gls_{view}_{seed}.png"))
 
 
 if __name__ == "__main__":

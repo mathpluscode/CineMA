@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import imageio
 import matplotlib.pyplot as plt
 import numpy as np
 import SimpleITK as sitk  # noqa: N813
@@ -41,44 +42,54 @@ def post_process(labels: np.ndarray) -> np.ndarray:
     return processed
 
 
-def plot_segmentations(images: np.ndarray, labels: np.ndarray, n_cols: int = 5) -> plt.Figure:
-    """Plot segmentations.
+def plot_segmentations(images: np.ndarray, labels: np.ndarray, filepath: Path) -> None:
+    """Plot segmentations as animated GIF.
 
     Args:
-        images: (x, y, t)
+        images: (x, y, 1, t)
         labels: (x, y, t)
-        n_cols: number of columns
-
-    Returns:
-        figure
+        filepath: path to save the GIF file.
     """
     n_frames = labels.shape[-1]
-    n_rows = n_frames // n_cols
-    fig, axs = plt.subplots(n_rows, n_cols, figsize=(n_cols, n_rows), dpi=300)
-    for i in range(n_rows):
-        for j in range(n_cols):
-            t = i * n_cols + j
-            axs[i, j].imshow(images[..., 0, t], cmap="gray")
-            axs[i, j].imshow((labels[..., t, None] == 1) * np.array([108 / 255, 142 / 255, 191 / 255, 0.6]))
-            axs[i, j].imshow((labels[..., t, None] == 2) * np.array([214 / 255, 182 / 255, 86 / 255, 0.6]))
-            axs[i, j].imshow((labels[..., t, None] == 3) * np.array([130 / 255, 179 / 255, 102 / 255, 0.6]))
-            axs[i, j].set_xticks([])
-            axs[i, j].set_yticks([])
-            if j == 0:
-                axs[i, j].set_ylabel(f"t = {t}")
-    fig.tight_layout()
-    fig.subplots_adjust(wspace=0, hspace=0)
-    return fig
+    temp_frame_paths = []
+
+    for t in tqdm(range(n_frames), desc="Creating GIF frames"):
+        # Create individual frame
+        fig, ax = plt.subplots(figsize=(5, 5), dpi=300)
+
+        # Plot image
+        ax.imshow(images[..., 0, t], cmap="gray")
+
+        # Plot segmentation overlays
+        ax.imshow((labels[..., t, None] == 1) * np.array([108 / 255, 142 / 255, 191 / 255, 0.6]))
+        ax.imshow((labels[..., t, None] == 2) * np.array([214 / 255, 182 / 255, 86 / 255, 0.6]))
+        ax.imshow((labels[..., t, None] == 3) * np.array([130 / 255, 179 / 255, 102 / 255, 0.6]))
+
+        # Remove axes
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+        # Save frame
+        frame_path = f"_tmp_frame_{t:03d}.png"
+        plt.savefig(frame_path, bbox_inches="tight", pad_inches=0, dpi=300)
+        plt.close(fig)
+        temp_frame_paths.append(frame_path)
+
+    # Create GIF
+    with imageio.get_writer(filepath, mode="I", duration=100, loop=0) as writer:
+        for frame_path in tqdm(temp_frame_paths, desc="Creating GIF"):
+            image = imageio.v2.imread(frame_path)
+            writer.append_data(image)
+            # Clean up temporary file
+            Path(frame_path).unlink()
 
 
-def plot_volume_changes(labels: np.ndarray) -> plt.Figure:
+def plot_volume_changes(labels: np.ndarray, filepath: Path) -> None:
     """Plot volume changes.
 
     Args:
         labels: (x, y, t)
-
-    Returns:
-        figure
+        filepath: path to save the PNG file.
     """
     n_frames = labels.shape[-1]
     xs = np.arange(n_frames)
@@ -89,15 +100,16 @@ def plot_volume_changes(labels: np.ndarray) -> plt.Figure:
     rvef = (max(rv_volumes) - min(rv_volumes)) / max(rv_volumes) * 100
 
     fig, ax = plt.subplots(figsize=(4, 4), dpi=120)
-    ax.plot(xs, rv_volumes, color="#6C8EBF", label="RV")
-    ax.plot(xs, myo_volumes, color="#D6B656", label="MYO")
-    ax.plot(xs, lv_volumes, color="#82B366", label="LV")
+    ax.plot(xs, rv_volumes, color="#6C8EBF", label="Right Ventricle")
+    ax.plot(xs, myo_volumes, color="#D6B656", label="Myocardium")
+    ax.plot(xs, lv_volumes, color="#82B366", label="Left Ventricle")
     ax.set_xlabel("Frame")
     ax.set_ylabel("Area (mm2)")
-    ax.set_title(f"LVEF = {lvef:.2f}%, RVEF = {rvef:.2f}%")
-    ax.legend(loc="lower right")
+    ax.set_title(f"LVEF = {lvef:.2f}%\nRVEF = {rvef:.2f}%")
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1))
     fig.tight_layout()
-    return fig
+    fig.savefig(filepath, dpi=300, bbox_inches="tight")
+    plt.close(fig)
 
 
 def run(trained_dataset: str, seed: int, device: torch.device, dtype: torch.dtype) -> None:
@@ -135,14 +147,10 @@ def run(trained_dataset: str, seed: int, device: torch.device, dtype: torch.dtyp
     labels = np.stack(labels_list, axis=-1)  # (x, y, t)
 
     # visualise segmentations
-    fig = plot_segmentations(images, labels)
-    plt.savefig(f"segmentation_{view}_mask_{trained_dataset}_{seed}.png", dpi=300, bbox_inches="tight")
-    plt.show(block=False)
+    plot_segmentations(images, labels, Path(f"segmentation_{view}_animation_{trained_dataset}_{seed}.gif"))
 
     # visualise area changes
-    fig = plot_volume_changes(labels)
-    fig.savefig(f"segmentation_{view}_mask_area_{trained_dataset}_{seed}.png", dpi=300, bbox_inches="tight")
-    plt.show(block=False)
+    plot_volume_changes(labels, Path(f"segmentation_{view}_mask_area_{trained_dataset}_{seed}.png"))
 
 
 if __name__ == "__main__":

@@ -151,3 +151,4 @@ wandb/
 # docs
 out/
 **/*.png
+**/*.gif

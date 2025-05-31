@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import imageio
 import matplotlib.pyplot as plt
 import numpy as np
 import SimpleITK as sitk  # noqa: N813
@@ -12,44 +13,74 @@ from tqdm import tqdm
 from cinema import ConvUNetR
 
 
-def plot_segmentations(images: np.ndarray, labels: np.ndarray, t_step: int) -> plt.Figure:
-    """Plot segmentations.
+def plot_segmentations(images: np.ndarray, labels: np.ndarray, filepath: Path) -> None:
+    """Plot segmentations as animated GIF.
 
     Args:
         images: (x, y, z, t)
         labels: (x, y, z, t)
-        t_step: step size for frames
-
-    Returns:
-        figure
+        filepath: path to save the GIF file.
     """
     n_slices, n_frames = labels.shape[-2:]
-    fig, axs = plt.subplots(n_frames, n_slices, figsize=(n_slices, n_frames), dpi=300)
-    for t in range(n_frames):
+    n_cols = 3
+    n_rows = (n_slices + n_cols - 1) // n_cols  # Calculate rows needed for 5 columns
+    temp_frame_paths = []
+
+    for t in tqdm(range(n_frames), desc="Creating segmentation GIF frames"):
+        # Create individual frame with SAX slices in grid layout (5 columns)
+        fig, axs = plt.subplots(n_rows, n_cols, figsize=(n_cols * 2, n_rows * 2), dpi=300)
+
+        # Handle different subplot arrangements
+        if n_rows == 1 and n_cols == 1:
+            axs = [[axs]]
+        elif n_rows == 1:
+            axs = [axs]
+        elif n_cols == 1:
+            axs = [[ax] for ax in axs]
+
         for z in range(n_slices):
-            axs[t, z].imshow(images[..., z, t], cmap="gray")
-            axs[t, z].imshow((labels[..., z, t, None] == 1) * np.array([108 / 255, 142 / 255, 191 / 255, 0.6]))
-            axs[t, z].imshow((labels[..., z, t, None] == 2) * np.array([214 / 255, 182 / 255, 86 / 255, 0.6]))
-            axs[t, z].imshow((labels[..., z, t, None] == 3) * np.array([130 / 255, 179 / 255, 102 / 255, 0.6]))
-            axs[t, z].set_xticks([])
-            axs[t, z].set_yticks([])
-            if z == 0:
-                axs[t, z].set_ylabel(f"t = {t * t_step}")
-    axs[0, n_slices // 2].set_title("SAX Slices")
-    fig.tight_layout()
-    fig.subplots_adjust(wspace=0, hspace=0)
-    return fig
+            row = z // n_cols
+            col = z % n_cols
+
+            axs[row][col].imshow(images[..., z, t], cmap="gray")
+            axs[row][col].imshow((labels[..., z, t, None] == 1) * np.array([108 / 255, 142 / 255, 191 / 255, 0.6]))
+            axs[row][col].imshow((labels[..., z, t, None] == 2) * np.array([214 / 255, 182 / 255, 86 / 255, 0.6]))
+            axs[row][col].imshow((labels[..., z, t, None] == 3) * np.array([130 / 255, 179 / 255, 102 / 255, 0.6]))
+            axs[row][col].set_xticks([])
+            axs[row][col].set_yticks([])
+
+        # Hide unused subplots
+        for z in range(n_slices, n_rows * n_cols):
+            row = z // n_cols
+            col = z % n_cols
+            axs[row][col].set_visible(False)
+
+        # Reduce spacing between subplots
+        fig.tight_layout()
+        fig.subplots_adjust(wspace=0.0, hspace=0.0)
+
+        # Save frame
+        frame_path = f"_tmp_sax_frame_{t:03d}.png"
+        plt.savefig(frame_path, bbox_inches="tight", pad_inches=0, dpi=300)
+        plt.close(fig)
+        temp_frame_paths.append(frame_path)
+
+    # Create GIF
+    with imageio.get_writer(filepath, mode="I", duration=200, loop=0) as writer:
+        for frame_path in tqdm(temp_frame_paths, desc="Creating segmentation GIF"):
+            image = imageio.v2.imread(frame_path)
+            writer.append_data(image)
+            # Clean up temporary file
+            Path(frame_path).unlink()
 
 
-def plot_volume_changes(labels: np.ndarray, t_step: int) -> plt.Figure:
+def plot_volume_changes(labels: np.ndarray, t_step: int, filepath: Path) -> None:
     """Plot volume changes.
 
     Args:
         labels: (x, y, z, t)
         t_step: step size for frames
-
-    Returns:
-        figure
+        filepath: path to save the PNG file.
     """
     n_frames = labels.shape[-1]
     xs = np.arange(n_frames) * t_step
@@ -60,15 +91,16 @@ def plot_volume_changes(labels: np.ndarray, t_step: int) -> plt.Figure:
     rvef = (max(rv_volumes) - min(rv_volumes)) / max(rv_volumes) * 100
 
     fig, ax = plt.subplots(figsize=(4, 4), dpi=120)
-    ax.plot(xs, rv_volumes, color="#6C8EBF", label="RV")
-    ax.plot(xs, myo_volumes, color="#D6B656", label="MYO")
-    ax.plot(xs, lv_volumes, color="#82B366", label="LV")
+    ax.plot(xs, rv_volumes, color="#6C8EBF", label="Right Ventricle")
+    ax.plot(xs, myo_volumes, color="#D6B656", label="Myocardium")
+    ax.plot(xs, lv_volumes, color="#82B366", label="Left Ventricle")
     ax.set_xlabel("Frame")
     ax.set_ylabel("Volume (ml)")
-    ax.set_title(f"LVEF = {lvef:.2f}%, RVEF = {rvef:.2f}%")
-    ax.legend(loc="lower right")
+    ax.set_title(f"LVEF = {lvef:.2f}%\nRVEF = {rvef:.2f}%")
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1))
     fig.tight_layout()
-    return fig
+    fig.savefig(filepath, dpi=300, bbox_inches="tight")
+    plt.close(fig)
 
 
 def run(trained_dataset: str, seed: int, device: torch.device, dtype: torch.dtype) -> None:
@@ -110,14 +142,10 @@ def run(trained_dataset: str, seed: int, device: torch.device, dtype: torch.dtyp
     labels = torch.stack(labels_list, dim=-1).detach().to(torch.float32).cpu().numpy()  # (x, y, z, t)
 
     # visualise segmentations
-    fig = plot_segmentations(images, labels, t_step)
-    fig.savefig(f"segmentation_{view}_mask_{trained_dataset}_{seed}.png", dpi=300, bbox_inches="tight")
-    plt.show(block=False)
+    plot_segmentations(images, labels, Path(f"segmentation_{view}_animation_{trained_dataset}_{seed}.gif"))
 
     # visualise volume changes
-    fig = plot_volume_changes(labels, t_step)
-    fig.savefig(f"segmentation_{view}_mask_volume_{trained_dataset}_{seed}.png", dpi=300, bbox_inches="tight")
-    plt.show(block=False)
+    plot_volume_changes(labels, t_step, Path(f"segmentation_{view}_mask_volume_{trained_dataset}_{seed}.png"))
 
 
 if __name__ == "__main__":
