@@ -53,7 +53,7 @@ def plot_heatmaps(images: np.ndarray, probs: np.ndarray, filepath: Path) -> None
         plt.close(fig)
 
     # Create GIF directly from memory arrays
-    with imageio.get_writer(filepath, mode="I", duration=100, loop=0) as writer:
+    with imageio.get_writer(filepath, mode="I", duration=50, loop=0) as writer:
         for frame in tqdm(frames, desc="Creating heatmap GIF"):
             writer.append_data(frame)
 
@@ -98,7 +98,7 @@ def plot_landmarks(images: np.ndarray, coords: np.ndarray, filepath: Path) -> No
         plt.close(fig)
 
     # Create GIF directly from memory arrays
-    with imageio.get_writer(filepath, mode="I", duration=100, loop=0) as writer:
+    with imageio.get_writer(filepath, mode="I", duration=50, loop=0) as writer:
         for frame in tqdm(frames, desc="Creating landmark GIF"):
             writer.append_data(frame)
 

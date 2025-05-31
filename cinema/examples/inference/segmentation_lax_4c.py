@@ -82,7 +82,7 @@ def plot_segmentations(images: np.ndarray, labels: np.ndarray, filepath: Path) -
         plt.close(fig)
 
     # Create GIF directly from memory arrays
-    with imageio.get_writer(filepath, mode="I", duration=100, loop=0) as writer:
+    with imageio.get_writer(filepath, mode="I", duration=50, loop=0) as writer:
         for frame in tqdm(frames, desc="Creating GIF"):
             writer.append_data(frame)
 

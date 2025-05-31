@@ -15,12 +15,13 @@ from tqdm import tqdm
 from cinema import ConvUNetR
 
 
-def plot_segmentations(images: np.ndarray, labels: np.ndarray, filepath: Path) -> None:
+def plot_segmentations(images: np.ndarray, labels: np.ndarray, t_step: int, filepath: Path) -> None:
     """Plot segmentations as animated GIF.
 
     Args:
         images: (x, y, z, t)
         labels: (x, y, z, t)
+        t_step: step size for frames
         filepath: path to save the GIF file.
     """
     n_slices, n_frames = labels.shape[-2:]
@@ -72,7 +73,7 @@ def plot_segmentations(images: np.ndarray, labels: np.ndarray, filepath: Path) -
         plt.close(fig)
 
     # Create GIF directly from memory arrays
-    with imageio.get_writer(filepath, mode="I", duration=200, loop=0) as writer:
+    with imageio.get_writer(filepath, mode="I", duration=50 * t_step, loop=0) as writer:
         for frame in tqdm(frames, desc="Creating segmentation GIF"):
             writer.append_data(frame)
 
@@ -145,7 +146,7 @@ def run(trained_dataset: str, seed: int, device: torch.device, dtype: torch.dtyp
     labels = torch.stack(labels_list, dim=-1).detach().to(torch.float32).cpu().numpy()  # (x, y, z, t)
 
     # visualise segmentations
-    plot_segmentations(images, labels, Path(f"segmentation_{view}_animation_{trained_dataset}_{seed}.gif"))
+    plot_segmentations(images, labels, t_step, Path(f"segmentation_{view}_animation_{trained_dataset}_{seed}.gif"))
 
     # visualise volume changes
     plot_volume_changes(labels, t_step, Path(f"segmentation_{view}_mask_volume_{trained_dataset}_{seed}.png"))
