@@ -138,6 +138,55 @@ def plot_lv(coords: np.ndarray, filepath: Path) -> None:
     plt.close(fig)
 
 
+def plot_heatmap_and_landmarks(images: np.ndarray, probs: np.ndarray, coords: np.ndarray, filepath: Path) -> None:
+    """Plot combined heatmap and landmarks as animated GIF.
+
+    Args:
+        images: (x, y, 1, t)
+        probs: (3, x, y, t)
+        coords: (6, t)
+        filepath: path to save the GIF file.
+    """
+    n_frames = probs.shape[-1]
+    frames = []
+
+    for t in tqdm(range(n_frames), desc="Creating combined GIF frames"):
+        # Create single frame with image + colored heatmaps + landmarks
+        fig, ax = plt.subplots(figsize=(5, 5), dpi=150)
+
+        # Plot original image as background
+        ax.imshow(images[..., 0, t], cmap="gray")
+
+        # Plot heatmap
+        ax.imshow(probs[0, ..., t, None] * np.array([1, 0, 0, 0.6]))
+        ax.imshow(probs[1, ..., t, None] * np.array([1, 0, 0, 0.6]))
+        ax.imshow(probs[2, ..., t, None] * np.array([1, 0, 0, 0.6]))
+
+        # Add landmark crosses on top
+        for k in range(3):
+            pred_x, pred_y = coords[2 * k, t], coords[2 * k + 1, t]
+            ax.plot([pred_y - 9, pred_y + 9], [pred_x, pred_x], color="red", linewidth=2)
+            ax.plot([pred_y, pred_y], [pred_x - 9, pred_x + 9], color="red", linewidth=2)
+
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+        # Render figure to numpy array using BytesIO
+        buf = io.BytesIO()
+        plt.savefig(buf, format="png", bbox_inches="tight", pad_inches=0, dpi=150)
+        buf.seek(0)
+        img = Image.open(buf)
+        frame = np.array(img.convert("RGB"))
+        frames.append(frame)
+        buf.close()
+        plt.close(fig)
+
+    # Create GIF directly from memory arrays
+    with imageio.get_writer(filepath, mode="I", duration=100, loop=0) as writer:
+        for frame in tqdm(frames, desc="Creating combined GIF"):
+            writer.append_data(frame)
+
+
 def run(view: str, seed: int, device: torch.device, dtype: torch.dtype) -> None:
     """Run landmark localization on LAX images using fine-tuned checkpoint."""
     # load model
@@ -179,6 +228,9 @@ def run(view: str, seed: int, device: torch.device, dtype: torch.dtype) -> None:
 
     # visualise LV length changes
     plot_lv(coords, Path(f"landmark_heatmap_gls_{view}_{seed}.png"))
+
+    # visualise heatmap and landmarks
+    plot_heatmap_and_landmarks(images, probs, coords, Path(f"landmark_heatmap_probs_and_landmark_{view}_{seed}.gif"))
 
 
 if __name__ == "__main__":
