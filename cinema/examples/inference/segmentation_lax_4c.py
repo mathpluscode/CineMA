@@ -1,5 +1,6 @@
 """Example script to perform segmentation on LAX 4C images using fine-tuned checkpoint."""
 
+import io
 from pathlib import Path
 
 import imageio
@@ -8,6 +9,7 @@ import numpy as np
 import SimpleITK as sitk  # noqa: N813
 import torch
 from monai.transforms import ScaleIntensityd
+from PIL import Image
 from scipy.spatial.distance import cdist
 from skimage import measure
 from tqdm import tqdm
@@ -51,11 +53,11 @@ def plot_segmentations(images: np.ndarray, labels: np.ndarray, filepath: Path) -
         filepath: path to save the GIF file.
     """
     n_frames = labels.shape[-1]
-    temp_frame_paths = []
+    frames = []
 
     for t in tqdm(range(n_frames), desc="Creating GIF frames"):
         # Create individual frame
-        fig, ax = plt.subplots(figsize=(5, 5), dpi=300)
+        fig, ax = plt.subplots(figsize=(5, 5), dpi=150)
 
         # Plot image
         ax.imshow(images[..., 0, t], cmap="gray")
@@ -69,19 +71,20 @@ def plot_segmentations(images: np.ndarray, labels: np.ndarray, filepath: Path) -
         ax.set_xticks([])
         ax.set_yticks([])
 
-        # Save frame
-        frame_path = f"_tmp_frame_{t:03d}.png"
-        plt.savefig(frame_path, bbox_inches="tight", pad_inches=0, dpi=300)
+        # Render figure to numpy array using BytesIO (universal across backends)
+        buf = io.BytesIO()
+        plt.savefig(buf, format="png", bbox_inches="tight", pad_inches=0, dpi=150)
+        buf.seek(0)
+        img = Image.open(buf)
+        frame = np.array(img.convert("RGB"))
+        frames.append(frame)
+        buf.close()
         plt.close(fig)
-        temp_frame_paths.append(frame_path)
 
-    # Create GIF
+    # Create GIF directly from memory arrays
     with imageio.get_writer(filepath, mode="I", duration=100, loop=0) as writer:
-        for frame_path in tqdm(temp_frame_paths, desc="Creating GIF"):
-            image = imageio.v2.imread(frame_path)
-            writer.append_data(image)
-            # Clean up temporary file
-            Path(frame_path).unlink()
+        for frame in tqdm(frames, desc="Creating GIF"):
+            writer.append_data(frame)
 
 
 def plot_volume_changes(labels: np.ndarray, filepath: Path) -> None:

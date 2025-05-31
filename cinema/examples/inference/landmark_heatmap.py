@@ -1,5 +1,6 @@
 """Example script to perform landmark localization on LAX images using fine-tuned checkpoint."""
 
+import io
 from pathlib import Path
 
 import imageio
@@ -8,6 +9,7 @@ import numpy as np
 import SimpleITK as sitk  # noqa: N813
 import torch
 from monai.transforms import ScaleIntensityd
+from PIL import Image
 from tqdm import tqdm
 
 from cinema import ConvUNetR, heatmap_soft_argmax
@@ -22,11 +24,11 @@ def plot_heatmaps(images: np.ndarray, probs: np.ndarray, filepath: Path) -> None
         filepath: path to save the GIF file.
     """
     n_frames = probs.shape[-1]
-    temp_frame_paths = []
+    frames = []
 
     for t in tqdm(range(n_frames), desc="Creating heatmap GIF frames"):
         # Create individual frame
-        fig, ax = plt.subplots(figsize=(5, 5), dpi=300)
+        fig, ax = plt.subplots(figsize=(5, 5), dpi=150)
 
         # Plot image
         ax.imshow(images[..., 0, t], cmap="gray")
@@ -40,19 +42,20 @@ def plot_heatmaps(images: np.ndarray, probs: np.ndarray, filepath: Path) -> None
         ax.set_xticks([])
         ax.set_yticks([])
 
-        # Save frame
-        frame_path = f"_tmp_heatmap_frame_{t:03d}.png"
-        plt.savefig(frame_path, bbox_inches="tight", pad_inches=0, dpi=300)
+        # Render figure to numpy array using BytesIO (universal across backends)
+        buf = io.BytesIO()
+        plt.savefig(buf, format="png", bbox_inches="tight", pad_inches=0, dpi=150)
+        buf.seek(0)
+        img = Image.open(buf)
+        frame = np.array(img.convert("RGB"))
+        frames.append(frame)
+        buf.close()
         plt.close(fig)
-        temp_frame_paths.append(frame_path)
 
-    # Create GIF
+    # Create GIF directly from memory arrays
     with imageio.get_writer(filepath, mode="I", duration=100, loop=0) as writer:
-        for frame_path in tqdm(temp_frame_paths, desc="Creating heatmap GIF"):
-            image = imageio.v2.imread(frame_path)
-            writer.append_data(image)
-            # Clean up temporary file
-            Path(frame_path).unlink()
+        for frame in tqdm(frames, desc="Creating heatmap GIF"):
+            writer.append_data(frame)
 
 
 def plot_landmarks(images: np.ndarray, coords: np.ndarray, filepath: Path) -> None:
@@ -64,11 +67,11 @@ def plot_landmarks(images: np.ndarray, coords: np.ndarray, filepath: Path) -> No
         filepath: path to save the GIF file.
     """
     n_frames = images.shape[-1]
-    temp_frame_paths = []
+    frames = []
 
     for t in tqdm(range(n_frames), desc="Creating landmark GIF frames"):
         # Create individual frame
-        fig, ax = plt.subplots(figsize=(5, 5), dpi=300)
+        fig, ax = plt.subplots(figsize=(5, 5), dpi=150)
 
         # draw predictions with cross
         preds = images[..., t] * np.array([1, 1, 1])[None, None, :]
@@ -84,19 +87,20 @@ def plot_landmarks(images: np.ndarray, coords: np.ndarray, filepath: Path) -> No
         ax.set_xticks([])
         ax.set_yticks([])
 
-        # Save frame
-        frame_path = f"_tmp_landmark_frame_{t:03d}.png"
-        plt.savefig(frame_path, bbox_inches="tight", pad_inches=0, dpi=300)
+        # Render figure to numpy array using BytesIO (universal across backends)
+        buf = io.BytesIO()
+        plt.savefig(buf, format="png", bbox_inches="tight", pad_inches=0, dpi=150)
+        buf.seek(0)
+        img = Image.open(buf)
+        frame = np.array(img.convert("RGB"))
+        frames.append(frame)
+        buf.close()
         plt.close(fig)
-        temp_frame_paths.append(frame_path)
 
-    # Create GIF
+    # Create GIF directly from memory arrays
     with imageio.get_writer(filepath, mode="I", duration=100, loop=0) as writer:
-        for frame_path in tqdm(temp_frame_paths, desc="Creating landmark GIF"):
-            image = imageio.v2.imread(frame_path)
-            writer.append_data(image)
-            # Clean up temporary file
-            Path(frame_path).unlink()
+        for frame in tqdm(frames, desc="Creating landmark GIF"):
+            writer.append_data(frame)
 
 
 def plot_lv(coords: np.ndarray, filepath: Path) -> None:

@@ -1,5 +1,6 @@
 """Example script to perform segmentation on SAX images using fine-tuned checkpoint."""
 
+import io
 from pathlib import Path
 
 import imageio
@@ -8,6 +9,7 @@ import numpy as np
 import SimpleITK as sitk  # noqa: N813
 import torch
 from monai.transforms import Compose, ScaleIntensityd, SpatialPadd
+from PIL import Image
 from tqdm import tqdm
 
 from cinema import ConvUNetR
@@ -23,12 +25,12 @@ def plot_segmentations(images: np.ndarray, labels: np.ndarray, filepath: Path) -
     """
     n_slices, n_frames = labels.shape[-2:]
     n_cols = 3
-    n_rows = (n_slices + n_cols - 1) // n_cols  # Calculate rows needed for 5 columns
-    temp_frame_paths = []
+    n_rows = (n_slices + n_cols - 1) // n_cols  # Calculate rows needed for 3 columns
+    frames = []
 
     for t in tqdm(range(n_frames), desc="Creating segmentation GIF frames"):
-        # Create individual frame with SAX slices in grid layout (5 columns)
-        fig, axs = plt.subplots(n_rows, n_cols, figsize=(n_cols * 2, n_rows * 2), dpi=300)
+        # Create individual frame with SAX slices in grid layout (3 columns)
+        fig, axs = plt.subplots(n_rows, n_cols, figsize=(n_cols * 2, n_rows * 2), dpi=150)
 
         # Handle different subplot arrangements
         if n_rows == 1 and n_cols == 1:
@@ -59,19 +61,20 @@ def plot_segmentations(images: np.ndarray, labels: np.ndarray, filepath: Path) -
         fig.tight_layout()
         fig.subplots_adjust(wspace=0.0, hspace=0.0)
 
-        # Save frame
-        frame_path = f"_tmp_sax_frame_{t:03d}.png"
-        plt.savefig(frame_path, bbox_inches="tight", pad_inches=0, dpi=300)
+        # Render figure to numpy array using BytesIO (universal across backends)
+        buf = io.BytesIO()
+        plt.savefig(buf, format="png", bbox_inches="tight", pad_inches=0, dpi=150)
+        buf.seek(0)
+        img = Image.open(buf)
+        frame = np.array(img.convert("RGB"))
+        frames.append(frame)
+        buf.close()
         plt.close(fig)
-        temp_frame_paths.append(frame_path)
 
-    # Create GIF
+    # Create GIF directly from memory arrays
     with imageio.get_writer(filepath, mode="I", duration=200, loop=0) as writer:
-        for frame_path in tqdm(temp_frame_paths, desc="Creating segmentation GIF"):
-            image = imageio.v2.imread(frame_path)
-            writer.append_data(image)
-            # Clean up temporary file
-            Path(frame_path).unlink()
+        for frame in tqdm(frames, desc="Creating segmentation GIF"):
+            writer.append_data(frame)
 
 
 def plot_volume_changes(labels: np.ndarray, t_step: int, filepath: Path) -> None:
