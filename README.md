@@ -16,8 +16,13 @@
 
 # CineMA: A Foundation Model for Cine Cardiac MRI 🎥🫀
 
-Check out our [interactive demos](https://huggingface.co/spaces/mathpluscode/CineMA) on Hugging Face to see CineMA in
-action!
+> [!TIP]
+>
+> Check out our [interactive demos](https://huggingface.co/spaces/mathpluscode/CineMA) on Hugging Face to see CineMA in
+> action!
+>
+> Multiple training and inference examples/scripts have also been provided in
+> [cinema/examples](https://github.com/mathpluscode/CineMA/tree/main/cinema/examples).
 
 ## 📝 Overview
 
@@ -202,4 +207,11 @@ For collaborations, reach out to Yunguan Fu (yunguan.fu.18@ucl.ac.uk).
 
 ## 📄 Citation
 
-[Citation information to be added]
+```
+@article{fu2025cinema,
+  title={CineMA: A Foundation Model for Cine Cardiac MRI},
+  author={Fu, Yunguan and Yi, Weixi and Manisty, Charlotte and Bhuva, Anish N and Treibel, Thomas A and Moon, James C and Clarkson, Matthew J and Davies, Rhodri Huw and Hu, Yipeng},
+  journal={arXiv preprint arXiv:2506.00679},
+  year={2025}
+}
+```
