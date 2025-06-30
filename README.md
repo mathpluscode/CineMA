@@ -184,6 +184,13 @@ python examples/train/pretrain.py
 
 For distributed training support, check [cinema/mae/pretrain.py](cinema/mae/pretrain.py).
 
+## ❤️ Acknowledgement
+
+This research has been conducted using the UK Biobank Resource under Application Number 71702. The authors acknowledge
+the use of resources provided by the Isambard-AI National AI Research Resource (AIRR). Isambard-AI is operated by the
+University of Bristol and is funded by the UK Government’s Department for Science, Innovation and Technology (DSIT) via
+UK Research and Innovation; and the Science and Technology Facilities Council [ST/AIRR/I-A-I/1023].
+
 ## 📖 References
 
 CineMA builds upon these open-source projects:
