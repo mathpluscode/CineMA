@@ -10,6 +10,7 @@
 ![Pre-commit](https://github.com/mathpluscode/CineMA/actions/workflows/pre-commit.yml/badge.svg)
 ![Pytest](https://github.com/mathpluscode/CineMA/actions/workflows/pytest.yml/badge.svg)
 [![codecov](https://codecov.io/gh/mathpluscode/CineMA/graph/badge.svg?token=MZVAOAWUPV)](https://codecov.io/gh/mathpluscode/CineMA)
+[![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/mathpluscode/CineMA)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 </div>
