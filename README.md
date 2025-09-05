@@ -15,7 +15,7 @@
 
 </div>
 
-# CineMA: A Foundation Model for Cine Cardiac MRI 🎥🫀
+# CineMA: A versatile foundation model for cine cardiac magnetic resonance image analysis tasks 🎥🫀
 
 > [!TIP]
 >
@@ -217,8 +217,8 @@ For collaborations, reach out to Yunguan Fu (yunguan.fu.18@ucl.ac.uk).
 
 ```
 @article{fu2025cinema,
-  title={CineMA: A Foundation Model for Cine Cardiac MRI},
-  author={Fu, Yunguan and Yi, Weixi and Manisty, Charlotte and Bhuva, Anish N and Treibel, Thomas A and Moon, James C and Clarkson, Matthew J and Davies, Rhodri Huw and Hu, Yipeng},
+  title={A versatile foundation model for cine cardiac magnetic resonance image analysis tasks},
+  author={Fu, Yunguan and Bai, Wenjia and Yi, Weixi and Manisty, Charlotte and Bhuva, Anish N and Treibel, Thomas A and Moon, James C and Clarkson, Matthew J and Davies, Rhodri Huw and Hu, Yipeng},
   journal={arXiv preprint arXiv:2506.00679},
   year={2025}
 }
