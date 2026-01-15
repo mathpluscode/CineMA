@@ -219,7 +219,7 @@ def binary_classification_metrics(
     else:
         metrics["mcc"] = 0.0
         metrics["roc_auc"] = 0.0
-    logger.info("Accuracy (%) | ROC AUC (%) | F1 (%) | MCC (%) | Specificity (%) | Sensitivity (%)")
+    logger.info("Accuracy | ROC AUC | F1 | MCC | Specificity | Sensitivity")
     logger.info(
         f"{metrics['accuracy'] * 100:.2f} | {metrics['roc_auc'] * 100:.2f} | "
         f"{metrics['f1'] * 100:.2f} | {metrics['mcc'] * 100:.2f} | "
@@ -262,7 +262,7 @@ def multiclass_classification_metrics(
     else:
         metrics["mcc"] = 0.0
         metrics["roc_auc"] = 0.0
-    logger.info("Accuracy (%) | ROC AUC (%) | F1 (%) | MCC (%)")
+    logger.info("Accuracy | ROC AUC | F1 | MCC")
     logger.info(
         f"{metrics['accuracy'] * 100:.2f} | {metrics['roc_auc'] * 100:.2f} | "
         f"{metrics['f1'] * 100:.2f} | {metrics['mcc'] * 100:.2f}"
