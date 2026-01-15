@@ -15,7 +15,7 @@ import pandas as pd
 import SimpleITK as sitk  # noqa: N813
 from tqdm import tqdm
 
-from cinema import LV_LABEL
+from cinema import LV_LABEL, RV_LABEL
 from cinema.data.acdc import ACDC_LABEL_MAP, ACDC_SAX_SLICE_SIZE, ACDC_SPACING
 from cinema.data.sitk import (
     cast_to_uint8,
@@ -154,10 +154,13 @@ def preprocess_pid(  # pylint:disable=too-many-statements
     es_image = sitk.Crop(es_image, crop_lower, crop_upper)
     es_label = sitk.Crop(es_label, crop_lower, crop_upper)
 
-    # calculate EDV, ESV, EF, HFrEF (EF < 40%)
-    data["edv"] = sitk.GetArrayFromImage(ed_label).sum() * np.prod(ACDC_SPACING) / 1000.0  # ml = 1000 mm^3
-    data["esv"] = sitk.GetArrayFromImage(es_label).sum() * np.prod(ACDC_SPACING) / 1000.0  # ml = 1000 mm^3
-    data["ef"] = ejection_fraction(edv=data["edv"], esv=data["esv"])
+    # calculate EDV, ESV, EF for LV and RV, ml = 1000 mm^3
+    data["lv_edv"] = sitk.GetArrayFromImage(ed_label == LV_LABEL).sum() * np.prod(ACDC_SPACING) / 1000.0
+    data["lv_esv"] = sitk.GetArrayFromImage(es_label == LV_LABEL).sum() * np.prod(ACDC_SPACING) / 1000.0
+    data["lv_ef"] = ejection_fraction(edv=data["lv_edv"], esv=data["lv_esv"])
+    data["rv_edv"] = sitk.GetArrayFromImage(ed_label == RV_LABEL).sum() * np.prod(ACDC_SPACING) / 1000.0
+    data["rv_esv"] = sitk.GetArrayFromImage(es_label == RV_LABEL).sum() * np.prod(ACDC_SPACING) / 1000.0
+    data["rv_ef"] = ejection_fraction(edv=data["rv_edv"], esv=data["rv_esv"])
 
     # normalise intensity
     image = clip_and_normalise_intensity_4d(image, intensity_range=None)

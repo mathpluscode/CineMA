@@ -16,7 +16,7 @@ import pandas as pd
 import SimpleITK as sitk  # noqa: N813
 from tqdm import tqdm
 
-from cinema import LV_LABEL
+from cinema import LV_LABEL, RV_LABEL
 from cinema.data.mnms2 import MNMS2_LABEL_MAP, MNMS2_LAX_SLICE_SIZE, MNMS2_SAX_SLICE_SIZE, MNMS2_SPACING
 from cinema.data.sitk import (
     cast_to_uint8,
@@ -151,10 +151,13 @@ def preprocess_pid(  # pylint:disable=too-many-statements
     sax_es_image = sitk.Crop(sax_es_image, crop_lower, crop_upper)
     sax_es_label = sitk.Crop(sax_es_label, crop_lower, crop_upper)
 
-    # calculate EDV, ESV, EF, HFrEF (EF < 40%)
-    data["edv"] = sitk.GetArrayFromImage(sax_ed_label).sum() * np.prod(MNMS2_SPACING) / 1000.0  # ml = 1000 mm^3
-    data["esv"] = sitk.GetArrayFromImage(sax_es_label).sum() * np.prod(MNMS2_SPACING) / 1000.0  # ml = 1000 mm^3
-    data["ef"] = ejection_fraction(edv=data["edv"], esv=data["esv"])
+    # calculate EDV, ESV, EF for LV and RV, ml = 1000 mm^3
+    data["lv_edv"] = sitk.GetArrayFromImage(sax_ed_label == LV_LABEL).sum() * np.prod(MNMS2_SPACING) / 1000.0
+    data["lv_esv"] = sitk.GetArrayFromImage(sax_es_label == LV_LABEL).sum() * np.prod(MNMS2_SPACING) / 1000.0
+    data["lv_ef"] = ejection_fraction(edv=data["lv_edv"], esv=data["lv_esv"])
+    data["rv_edv"] = sitk.GetArrayFromImage(sax_ed_label == RV_LABEL).sum() * np.prod(MNMS2_SPACING) / 1000.0
+    data["rv_esv"] = sitk.GetArrayFromImage(sax_es_label == RV_LABEL).sum() * np.prod(MNMS2_SPACING) / 1000.0
+    data["rv_ef"] = ejection_fraction(edv=data["rv_edv"], esv=data["rv_esv"])
 
     # normalise intensity
     lax_4c_ed_image = clip_and_normalise_intensity_3d(lax_4c_ed_image, intensity_range=None)
