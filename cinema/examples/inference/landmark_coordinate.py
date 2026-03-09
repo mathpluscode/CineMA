@@ -35,7 +35,7 @@ def run(view: str, seed: int, device: torch.device, dtype: torch.dtype) -> None:
         batch = transform({view: torch.from_numpy(images[None, ..., 0, t])})
         batch = {k: v[None, ...].to(device=device, dtype=dtype) for k, v in batch.items()}
         with torch.no_grad(), torch.autocast("cuda", dtype=dtype, enabled=torch.cuda.is_available()):
-            coords = model(batch)[0].numpy()  # (6,)
+            coords = model(batch)[0].cpu().float().numpy()  # (6,)
         coords *= np.array([w, h, w, h, w, h])
         coords = [int(x) for x in coords]
         coords_list.append(coords)
