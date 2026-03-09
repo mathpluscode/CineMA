@@ -50,7 +50,7 @@ def run(trained_dataset: str, view: str, seed: int, device: torch.device, dtype:
     with torch.no_grad(), torch.autocast("cuda", dtype=dtype, enabled=torch.cuda.is_available()):
         logits = model(batch)  # (1, n_classes)
     probs = torch.softmax(logits, dim=1)[0]  # (n_classes,)
-    probs_dict = dict(zip(classes, probs.cpu().numpy(), strict=False))
+    probs_dict = dict(zip(classes, probs.cpu().float().numpy(), strict=False))
     print(f"Using {view} view with model trained on {trained_dataset} dataset with seed {seed}.")  # noqa: T201
     print(f"The predicted class is {classes[np.argmax(logits)]}, ground truth should be HCM.")  # noqa: T201
     print(f"The probabilities are {probs_dict}.")  # noqa: T201
