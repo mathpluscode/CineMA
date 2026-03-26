@@ -436,17 +436,17 @@ requires-dist = [
     { name = "coverage", marker = "extra == 'dev'", specifier = "==7.8.2" },
     { name = "einops", specifier = "==0.8.1" },
     { name = "hydra-core", specifier = "==1.3.2" },
-    { name = "jupyterlab", marker = "extra == 'dev'", specifier = "==4.4.3" },
+    { name = "jupyterlab", marker = "extra == 'dev'", specifier = "==4.4.8" },
     { name = "kaggle", marker = "extra == 'dev'", specifier = "==1.7.4.5" },
     { name = "matplotlib", specifier = "==3.10.1" },
-    { name = "monai", specifier = "==1.4.0" },
+    { name = "monai", specifier = "==1.5.2" },
     { name = "nbmake", marker = "extra == 'dev'", specifier = "==1.5.5" },
     { name = "nibabel", specifier = "==5.3.2" },
     { name = "numpy", specifier = "==1.26.4" },
     { name = "pandas", specifier = "==2.2.3" },
     { name = "plotly", specifier = "==6.1.2" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = "==4.2.0" },
-    { name = "pydicom", specifier = "==3.0.1" },
+    { name = "pydicom", specifier = "==3.0.2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = "==8.3.5" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = "==6.1.1" },
     { name = "pytest-mock", marker = "extra == 'dev'", specifier = "==3.14.1" },
@@ -1496,7 +1496,7 @@ wheels = [
 
 [[package]]
 name = "jupyterlab"
-version = "4.4.3"
+version = "4.4.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "async-lru" },
@@ -1514,9 +1514,9 @@ dependencies = [
     { name = "tornado" },
     { name = "traitlets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d3/2d/d1678dcf2db66cb4a38a80d9e5fcf48c349f3ac12f2d38882993353ae768/jupyterlab-4.4.3.tar.gz", hash = "sha256:a94c32fd7f8b93e82a49dc70a6ec45a5c18281ca2a7228d12765e4e210e5bca2", size = 23032376, upload-time = "2025-05-26T11:18:00.996Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b4/f1/062e250e4126babed8b62ed3dbe47dfb4761e310a235a815e87b4fe330a3/jupyterlab-4.4.8.tar.gz", hash = "sha256:a89e5a2e9f9295ae039356fc5247e5bfac64936126ab805e3ff8e47f385b0c7e", size = 22967507, upload-time = "2025-09-25T17:26:38.413Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c6/4d/7dd5c2ffbb960930452a031dc8410746183c924580f2ab4e68ceb5b3043f/jupyterlab-4.4.3-py3-none-any.whl", hash = "sha256:164302f6d4b6c44773dfc38d585665a4db401a16e5296c37df5cba63904fbdea", size = 12295480, upload-time = "2025-05-26T11:17:56.607Z" },
+    { url = "https://files.pythonhosted.org/packages/d1/3b/82d8c000648e77a112b2ae38e49722ffea808933377ea4a4867694384774/jupyterlab-4.4.8-py3-none-any.whl", hash = "sha256:81b56f33f35be15150e7ccd43440963a93d2b115ffa614a06d38b91e4d650f92", size = 12292452, upload-time = "2025-09-25T17:26:34.289Z" },
 ]
 
 [[package]]
@@ -1901,15 +1901,15 @@ wheels = [
 
 [[package]]
 name = "monai"
-version = "1.4.0"
+version = "1.5.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
     { name = "torch" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d5/73/6df8090932ef8994a48086f54f70c6379e60bc74103d3a6317182f121436/monai-1.4.0.tar.gz", hash = "sha256:2fff631dd78afc166ccbafb89d7dde06f3d3b287860fb6f2d6cddd6bcc72caa8", size = 1185355, upload-time = "2024-10-16T17:29:32.098Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/db/26/cb4a67d7ab99fa848cf9998d9159a2d368b2dacc6f94b983a4ab36cd9005/monai-1.5.2.tar.gz", hash = "sha256:11cba5bfaad85bbb7e95479071769a0e56f1d515646f6ee203f6d475889d3b25", size = 1687099, upload-time = "2026-01-27T13:14:42.616Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/79/86/8bf48a306e3ad9de54a9c2e08c99eb52d528455ed9a757403bcd54d714f9/monai-1.4.0-py3-none-any.whl", hash = "sha256:a715ca9ff8a068e36efdd147420f0ff02ead744909e7ea0998f31129c4997c9b", size = 1511882, upload-time = "2024-10-16T17:29:29.984Z" },
+    { url = "https://files.pythonhosted.org/packages/11/36/0e1879b0c942f5f373e171656b4d22db4b50fad696a53e03828b6d00f5da/monai-1.5.2-py3-none-any.whl", hash = "sha256:6c4f75d47a88c1e37521bce4b7cb1540c6f4e5ca1d43910c60f61fc2ef4ddab2", size = 2674844, upload-time = "2026-01-27T13:14:41.049Z" },
 ]
 
 [[package]]
@@ -2737,11 +2737,11 @@ wheels = [
 
 [[package]]
 name = "pydicom"
-version = "3.0.1"
+version = "3.0.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/d7/6f/55ea163b344c91df2e03c007bebf94781f0817656e2c037d7c5bf86c3bfc/pydicom-3.0.1.tar.gz", hash = "sha256:7b8be344b5b62493c9452ba6f5a299f78f8a6ab79786c729b0613698209603ec", size = 2884731, upload-time = "2024-09-22T02:02:43.202Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7a/de/52aaf905f1f0ae7aba85996e2592ea2c1fe49157f3cfbcd1871965bdb51d/pydicom-3.0.2.tar.gz", hash = "sha256:5942bfc2d72c6fa4b3b5b62c527f54b7f2355f21d6f5d296df6bb30188df6a4f", size = 2886792, upload-time = "2026-03-19T21:46:20.935Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/27/a6/98651e752a49f341aa99aa3f6c8ba361728dfc064242884355419df63669/pydicom-3.0.1-py3-none-any.whl", hash = "sha256:db32f78b2641bd7972096b8289111ddab01fb221610de8d7afa835eb938adb41", size = 2376126, upload-time = "2024-09-22T02:02:41.616Z" },
+    { url = "https://files.pythonhosted.org/packages/46/e0/60466c6d712dad2cf807df315e39863e91609ffd1064ecb835994460bbda/pydicom-3.0.2-py3-none-any.whl", hash = "sha256:abf971a5440f84dbaf42c4b6758e30e62480902584f8b270b9a5d146e278a07b", size = 2376822, upload-time = "2026-03-19T21:46:19.042Z" },
 ]
 
 [[package]]
