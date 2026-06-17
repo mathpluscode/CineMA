@@ -13,7 +13,7 @@
 
 </div>
 
-# CineMA: A versatile foundation model for cine cardiac magnetic resonance image analysis tasks 🎥🫀
+# CineMA: Development and validation of a versatile foundation model for cine cardiac magnetic resonance image analysis 🎥🫀
 
 > [!TIP]
 >
@@ -214,10 +214,11 @@ For collaborations, reach out to Yunguan Fu (yunguan.fu.18@ucl.ac.uk).
 ## 📄 Citation
 
 ```
-@article{fu2025cinema,
-  title={A versatile foundation model for cine cardiac magnetic resonance image analysis tasks},
+@article{fu2026development,
+  title={Development and validation of a versatile foundation model for cine cardiac magnetic resonance image analysis},
   author={Fu, Yunguan and Bai, Wenjia and Yi, Weixi and Manisty, Charlotte and Bhuva, Anish N and Treibel, Thomas A and Moon, James C and Clarkson, Matthew J and Davies, Rhodri Huw and Hu, Yipeng},
-  journal={arXiv preprint arXiv:2506.00679},
-  year={2025}
+  journal={Communications Medicine},
+  year={2026},
+  publisher={Nature Publishing Group UK London}
 }
 ```
